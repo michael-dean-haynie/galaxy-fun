@@ -26,9 +26,11 @@ void main() {
     // you want inside the scripts/ folder before tabbing back to
     // sc2edit, hitting c-F12 to Compile and c-F9 to run.
 
-    noopfunc();
+    // noopfunc();
     // initUtil();
     // initCmd();
 
     // registerChatCommand("lol", "Prints 'lol'.", false, true, cmdLol);
+
+    TriggerDebugOutput(1, StringToText("main() has run"), true);
 }

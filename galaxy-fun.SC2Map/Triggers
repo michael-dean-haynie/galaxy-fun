@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TriggerData>
     <Root>
-        <Item Type="Trigger" Id="FB83A08D"/>
         <Item Type="CustomScript" Id="78FD7498"/>
+        <Item Type="Trigger" Id="FB83A08D"/>
     </Root>
+    <Element Type="CustomScript" Id="78FD7498">
+        <ScriptCode>
+            include &quot;scripts/main&quot;
+        </ScriptCode>
+        <InitFunc>main</InitFunc>
+    </Element>
     <Element Type="Trigger" Id="FB83A08D">
         <Event Type="FunctionCall" Id="6D44E6C2"/>
         <Action Type="FunctionCall" Id="3C946E7C"/>
@@ -25,11 +31,5 @@
     </Element>
     <Element Type="FunctionCall" Id="855F4393">
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000148"/>
-    </Element>
-    <Element Type="CustomScript" Id="78FD7498">
-        <ScriptCode>
-            include &quot;scripts/main&quot;
-        </ScriptCode>
-        <InitFunc>main</InitFunc>
     </Element>
 </TriggerData>
