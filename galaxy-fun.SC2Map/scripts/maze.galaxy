@@ -1,0 +1,254 @@
+const int maxMazeGridDimension = 50; // the maxinum number of rows/columns
+
+// TODO: remove
+trigger gt_UntitledTrigger002TEMP;
+
+struct MazeCell
+{
+    int x;
+    int y;
+    bool top; // top wall exists (is solid) etc...
+    bool bottom;
+    bool left;
+    bool right;
+};
+
+struct MazeGrid
+{
+    int xCellCount;
+    int yCellCount;
+    int cellWallWidth;
+    int cellInnerWidth; // the width of each cell (not including the walls)
+    MazeCell[maxMazeGridDimension][maxMazeGridDimension] cells;
+};
+
+void dbg(string msg)
+{
+    TriggerDebugOutput(10, StringToText(msg), true);
+}
+
+void visitCellsRecursively(int cellX, int cellY);
+bool cellHasBeenVisited(int cellX, int cellY);
+bool cellHasUnvisitedNeighbor(int cellX, int cellY);
+bool cellExists(int cellX, int cellY);
+string getDirectionOfRandomUnvisitedNeighbor(int cellX, int cellY);
+
+MazeGrid grid;
+int temp_visitedCellsCount = 0;
+
+void createMaze()
+{
+    int xIdx;
+    int yIdx;
+
+
+    // initialize grid struct
+    grid.xCellCount = 10;
+    grid.yCellCount = 10;
+    grid.cellWallWidth = 1;
+    grid.cellInnerWidth = 1;
+
+    // initialize the cell structs within the grid struct
+    while(xIdx < grid.xCellCount)
+    {
+        while(yIdx < grid.yCellCount)
+        {
+            grid.cells[xIdx][yIdx].x = xIdx;
+            grid.cells[xIdx][yIdx].y = yIdx;
+            grid.cells[xIdx][yIdx].top = true;
+            grid.cells[xIdx][yIdx].bottom = true;
+            grid.cells[xIdx][yIdx].left = true;
+            grid.cells[xIdx][yIdx].right = true;
+            dbg("forloop(" + IntToString(xIdx) + "," + IntToString(yIdx) + "), top: " + IntToString(BoolToInt(grid.cells[xIdx][yIdx].top)));
+            yIdx += 1;
+        }
+        xIdx += 1;
+        yIdx = 0;
+    }
+    // for(; xIdx < grid.xCellCount; xIdx += 1)
+    // {
+    //     for(; yIdx < grid.yCellCount; yIdx += 1)
+    //     {
+    //         grid.cells[xIdx][yIdx].x = xIdx;
+    //         grid.cells[xIdx][yIdx].y = yIdx;
+    //         grid.cells[xIdx][yIdx].top = true;
+    //         grid.cells[xIdx][yIdx].bottom = true;
+    //         grid.cells[xIdx][yIdx].left = true;
+    //         grid.cells[xIdx][yIdx].right = true;
+    //         dbg("forloop(" + IntToString(xIdx) + "," + IntToString(yIdx) + "), top: " + IntToString(BoolToInt(grid.cells[xIdx][yIdx].top)));
+    //     }
+    // }
+
+    visitCellsRecursively(grid.xCellCount / 2, grid.yCellCount / 2);
+}
+
+void visitCellsRecursively(int cellX, int cellY)
+{
+    string nbrDirection;
+    int nbrX;
+    int nbrY;
+
+    temp_visitedCellsCount += 1;
+    dbg("entering visitCellsRecursively(" + IntToString(cellX) + "," + IntToString(cellY) + "), temp_visitedCellsCount: " + IntToString(temp_visitedCellsCount));
+
+    while(cellHasUnvisitedNeighbor(cellX, cellY)) {
+        nbrDirection = getDirectionOfRandomUnvisitedNeighbor(cellX, cellY);
+
+        // top
+        if (nbrDirection == "top")
+        {
+            grid.cells[cellX][cellY].top = false;
+            nbrX = cellX;
+            nbrY = cellY + 1;
+            grid.cells[nbrX][nbrY].bottom = false;
+        }
+
+        // bottom
+        if (nbrDirection == "bottom")
+        {
+            grid.cells[cellX][cellY].bottom = false;
+            nbrX = cellX;
+            nbrY = cellY - 1;
+            grid.cells[nbrX][nbrY].top = false;
+        }
+
+        // left
+        if (nbrDirection == "left")
+        {
+            grid.cells[cellX][cellY].left = false;
+            nbrX = cellX - 1;
+            nbrY = cellY;
+            grid.cells[nbrX][nbrY].right = false;
+        }
+
+        // right
+        if (nbrDirection == "right")
+        {
+            grid.cells[cellX][cellY].right = false;
+            nbrX = cellX + 1;
+            nbrY = cellY;
+            grid.cells[nbrX][nbrY].left = false;
+        }
+
+        visitCellsRecursively(nbrX, nbrY);
+        dbg("exiting visitCellsRecursively(" + IntToString(cellX) + "," + IntToString(cellY) + "), temp_visitedCellsCount: " + IntToString(temp_visitedCellsCount));
+    }
+
+}
+
+bool cellHasBeenVisited(int cellX, int cellY)
+{
+
+    bool result = grid.cells[cellX][cellY].top == false
+        || grid.cells[cellX][cellY].bottom == false
+        || grid.cells[cellX][cellY].left == false
+        || grid.cells[cellX][cellY].right == false;
+
+    // dbg("cellHasBeenVisited(" + IntToString(cellX) + "," + IntToString(cellY) + "), returning: " + IntToString(BoolToInt(result)));
+    return result;
+}
+
+bool cellHasUnvisitedNeighbor(int cellX, int cellY)
+{
+    int nbrX;
+    int nbrY;
+
+    // top
+    nbrX = cellX;
+    nbrY = cellY + 1;
+    if (cellExists(nbrX, nbrY) && !cellHasBeenVisited(nbrX, nbrY)) {
+        // dbg("cellHasUnvisitedNeighbor(" + IntToString(cellX) + "," + IntToString(cellY) + "), returning: true");
+        return true;
+    }
+
+    // bottom
+    nbrX = cellX;
+    nbrY = cellY - 1;
+    if (cellExists(nbrX, nbrY) && !cellHasBeenVisited(nbrX, nbrY)) {
+        // dbg("cellHasUnvisitedNeighbor(" + IntToString(cellX) + "," + IntToString(cellY) + "), returning: true");
+        return true;
+    }
+
+    // left
+    nbrX = cellX - 1;
+    nbrY = cellY;
+    if (cellExists(nbrX, nbrY) && !cellHasBeenVisited(nbrX, nbrY)) {
+        // dbg("cellHasUnvisitedNeighbor(" + IntToString(cellX) + "," + IntToString(cellY) + "), returning: true");
+        return true;
+    }
+
+    // right
+    nbrX = cellX + 1;
+    nbrY = cellY;
+    if (cellExists(nbrX, nbrY) && !cellHasBeenVisited(nbrX, nbrY)) {
+        // dbg("cellHasUnvisitedNeigddhbor(" + IntToString(cellX) + "," + IntToString(cellY) + "), returning: true");
+        return true;
+    }
+
+    // dbg("cellHasUnvisitedNeighbor(" + IntToString(cellX) + "," + IntToString(cellY) + "), returning: false");
+    return false;
+}
+
+string getDirectionOfRandomUnvisitedNeighbor(int cellX, int cellY)
+{
+    string[4] possibleDirections;
+    int numberOfDirections;
+    int nbrX;
+    int nbrY;
+
+    // top
+    nbrX = cellX;
+    nbrY = cellY + 1;
+    if (cellExists(nbrX, nbrY) && !cellHasBeenVisited(nbrX, nbrY)) {
+        possibleDirections[numberOfDirections] = "top";
+        numberOfDirections += 1;
+    }
+
+    // bottom
+    nbrX = cellX;
+    nbrY = cellY - 1;
+    if (cellExists(nbrX, nbrY) && !cellHasBeenVisited(nbrX, nbrY)) {
+        possibleDirections[numberOfDirections] = "bottom";
+        numberOfDirections += 1;
+    }
+
+    // left
+    nbrX = cellX - 1;
+    nbrY = cellY;
+    if (cellExists(nbrX, nbrY) && !cellHasBeenVisited(nbrX, nbrY)) {
+        possibleDirections[numberOfDirections] = "left";
+        numberOfDirections += 1;
+    }
+
+    // right
+    nbrX = cellX + 1;
+    nbrY = cellY;
+    if (cellExists(nbrX, nbrY) && !cellHasBeenVisited(nbrX, nbrY)) {
+        possibleDirections[numberOfDirections] = "right";
+        numberOfDirections += 1;
+    }
+
+    return possibleDirections[RandomInt(0, numberOfDirections - 1)];
+}
+
+bool cellExists(int cellX, int cellY)
+{
+    bool result = cellX >= 0 && cellX < grid.xCellCount
+        && cellY >= 0 && cellY < grid.yCellCount;
+
+    // dbg("cellExists(" + IntToString(cellX) + "," + IntToString(cellY) + "), returning: " + IntToString(BoolToInt(result)));
+    return result;
+}
+
+// TEMP DELETE
+bool gt_UntitledTrigger002TEMP_Func (bool testConds, bool runActions) {
+    // Automatic Variable Declarations
+    createMaze();
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+void gt_UntitledTrigger002TEMP_Init () {
+    gt_UntitledTrigger002TEMP = TriggerCreate("gt_UntitledTrigger002TEMP_Func");
+    TriggerAddEventChatMessage(gt_UntitledTrigger002TEMP, c_playerAny, "doit", true);
+}
