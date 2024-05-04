@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Catalog>
+    <!--                                                                                         -->
+    <!-- Missile Turret ........................................................................ -->
+    <!--                                                                                         -->
+    <CActorUnit id="MissileTurret">
+        <Model value="AiurTree"/>
+    </CActorUnit>
+</Catalog>

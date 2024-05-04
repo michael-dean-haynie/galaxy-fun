@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Catalog>
-    <CUnit id="DestructibleSignsIcons">
-        <LifeArmor value="0"/>
-    </CUnit>
     <CUnit id="Marine">
-        <Speed value="10"/>
+        <Sight value="12"/>
+    </CUnit>
+    <CUnit id="MissileTurret">
+        <FlagArray index="Unselectable" value="1"/>
+        <FlagArray index="Untargetable" value="1"/>
+        <FlagArray index="Invulnerable" value="1"/>
+        <OccludeHeight value="2"/>
+        <Footprint value="FootprintDoodad1x1BlockLOSBoostHeight"/>
+        <PlacementFootprint value="FootprintDoodad1x1BlockLOSBoostHeight"/>
     </CUnit>
 </Catalog>

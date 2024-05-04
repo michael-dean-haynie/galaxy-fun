@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <terrain version="115">
     <heightMap tileSet="Zerus" uvtiling="12.000000 12.000000 0.000000 0.000000 " dim="129 129 " offset="0.000000 0.000000 0.000000 " scale="1.000000e+00 1.000000e+00 1.000000e+00 ">
-        <vertData quantizeBias="1.000076e+00" quantizeScale="1.525902e-04" standardHeight="8.000000e+00" name="t3HeightMap"/>
+        <vertData quantizeBias="1.000152e+00" quantizeScale="1.614170e-04" standardHeight="8.000000e+00" name="t3HeightMap"/>
         <masks name="t3TextureMasks"/>
         <textureSetList num="8">
             <textureSet i="0" name="Zerus"/>
@@ -15,13 +15,13 @@
         </textureSetList>
         <textureList num="64">
             <texture i="0" name="Zerus1"/>
-            <texture i="1" name=""/>
-            <texture i="2" name=""/>
-            <texture i="3" name=""/>
-            <texture i="4" name=""/>
-            <texture i="5" name=""/>
-            <texture i="6" name=""/>
-            <texture i="7" name=""/>
+            <texture i="1" name="Zerus5"/>
+            <texture i="2" name="Zerus4"/>
+            <texture i="3" name="Zerus6"/>
+            <texture i="4" name="Zerus7"/>
+            <texture i="5" name="Zerus2"/>
+            <texture i="6" name="Zerus3"/>
+            <texture i="7" name="Zerus8"/>
             <texture i="8" name=""/>
             <texture i="9" name=""/>
             <texture i="10" name=""/>

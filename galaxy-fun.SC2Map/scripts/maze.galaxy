@@ -48,10 +48,10 @@ void createMaze()
 
 
     // initialize grid struct
-    grid.xCellCount = 20;
-    grid.yCellCount = 20;
+    grid.xCellCount = 16;
+    grid.yCellCount = 16;
     grid.cellWallWidth = 1;
-    grid.cellInnerWidth = 3;
+    grid.cellInnerWidth = 5;
 
     // initialize the cell structs within the grid struct
     while(xIdx < grid.xCellCount)
@@ -79,7 +79,7 @@ void createMaze()
 
 void placeBarrier(point targetPoint)
 {
-    libNtve_gf_CreateUnitsWithDefaultFacing(1, "BraxisAlphaDestructible1x1", 0, 1, targetPoint);
+    libNtve_gf_CreateUnitsWithDefaultFacing(1, "MissileTurret", 0, 0, targetPoint);
 }
 
 void placeWall(int cellX, int cellY, string wall)

@@ -17,7 +17,6 @@ void InitLibs () {
 //--------------------------------------------------------------------------------------------------
 // Trigger Variables
 //--------------------------------------------------------------------------------------------------
-trigger gt_MeleeInitialization;
 trigger gt_examplecreateunit;
 
 //--------------------------------------------------------------------------------------------------
@@ -33,40 +32,10 @@ void InitCustomScript () {
 }
 
 //--------------------------------------------------------------------------------------------------
-// Trigger: Melee Initialization
-//--------------------------------------------------------------------------------------------------
-bool gt_MeleeInitialization_Func (bool testConds, bool runActions) {
-    // Automatic Variable Declarations
-    // Actions
-    if (!runActions) {
-        return true;
-    }
-
-    MeleeInitResources();
-    MeleeInitUnits();
-    MeleeInitAI();
-    MeleeInitOptions();
-    return true;
-}
-
-//--------------------------------------------------------------------------------------------------
-void gt_MeleeInitialization_Init () {
-    gt_MeleeInitialization = TriggerCreate("gt_MeleeInitialization_Func");
-    TriggerEnable(gt_MeleeInitialization, false);
-    TriggerAddEventMapInit(gt_MeleeInitialization);
-}
-
-//--------------------------------------------------------------------------------------------------
 // Trigger: example create unit
 //--------------------------------------------------------------------------------------------------
 bool gt_examplecreateunit_Func (bool testConds, bool runActions) {
     // Automatic Variable Declarations
-    // Actions
-    if (!runActions) {
-        return true;
-    }
-
-    libNtve_gf_CreateUnitsWithDefaultFacing(1, "Marine", 0, 1, RegionGetCenter(RegionPlayableMap()));
     return true;
 }
 
@@ -80,7 +49,6 @@ void gt_examplecreateunit_Init () {
 // Trigger Initialization
 //--------------------------------------------------------------------------------------------------
 void InitTriggers () {
-    gt_MeleeInitialization_Init();
     gt_examplecreateunit_Init();
 }
 

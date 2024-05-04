@@ -34,4 +34,6 @@ void main() {
     // registerChatCommand("lol", "Prints 'lol'.", false, true, cmdLol);
     gt_UntitledTrigger002TEMP_Init();
     createMaze();
+    libNtve_gf_CreateUnitsWithDefaultFacing(1, "Marine", 0, 1, RegionGetCenter(RegionPlayableMap()));
+CameraPan(UnitGetOwner(UnitLastCreated()), UnitGetPosition(UnitLastCreated()), 0.0, -1, 0.0, false);
 }
