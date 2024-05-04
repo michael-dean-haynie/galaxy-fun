@@ -1,4 +1,3 @@
 ﻿CustomScript/Name/78FD7498=Bootstrap
-Trigger/Name/25B348BB=Untitled Trigger 002
-Trigger/Name/F3C717D9=Untitled Trigger 001
+Trigger/Name/F3C717D9=example create unit
 Trigger/Name/FB83A08D=Melee Initialization

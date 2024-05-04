@@ -18,8 +18,7 @@ void InitLibs () {
 // Trigger Variables
 //--------------------------------------------------------------------------------------------------
 trigger gt_MeleeInitialization;
-trigger gt_UntitledTrigger001;
-trigger gt_UntitledTrigger002;
+trigger gt_examplecreateunit;
 
 //--------------------------------------------------------------------------------------------------
 // Custom Script: Bootstrap
@@ -58,41 +57,23 @@ void gt_MeleeInitialization_Init () {
 }
 
 //--------------------------------------------------------------------------------------------------
-// Trigger: Untitled Trigger 001
+// Trigger: example create unit
 //--------------------------------------------------------------------------------------------------
-bool gt_UntitledTrigger001_Func (bool testConds, bool runActions) {
+bool gt_examplecreateunit_Func (bool testConds, bool runActions) {
     // Automatic Variable Declarations
     // Actions
     if (!runActions) {
         return true;
     }
 
-    libNtve_gf_CreateUnitsWithDefaultFacing(1, "BraxisAlphaDestructible1x1", 0, 1, Point(50.0, 50.0));
-    libNtve_gf_CreateUnitsWithDefaultFacing(1, "BraxisAlphaDestructible1x1", 0, 1, Point(51.0, 50.0));
-    libNtve_gf_CreateUnitsWithDefaultFacing(1, "BraxisAlphaDestructible1x1", 0, 1, Point(52.0, 50.0));
-    libNtve_gf_CreateUnitsWithDefaultFacing(1, "BraxisAlphaDestructible1x1", 0, 1, Point(53.0, 50.0));
-    libNtve_gf_CreateUnitsWithDefaultFacing(1, "Marine", 0, 1, Point(45.0, 45.0));
+    libNtve_gf_CreateUnitsWithDefaultFacing(1, "Marine", 0, 1, RegionGetCenter(RegionPlayableMap()));
     return true;
 }
 
 //--------------------------------------------------------------------------------------------------
-void gt_UntitledTrigger001_Init () {
-    gt_UntitledTrigger001 = TriggerCreate("gt_UntitledTrigger001_Func");
-    TriggerAddEventMapInit(gt_UntitledTrigger001);
-}
-
-//--------------------------------------------------------------------------------------------------
-// Trigger: Untitled Trigger 002
-//--------------------------------------------------------------------------------------------------
-bool gt_UntitledTrigger002_Func (bool testConds, bool runActions) {
-    // Automatic Variable Declarations
-    return true;
-}
-
-//--------------------------------------------------------------------------------------------------
-void gt_UntitledTrigger002_Init () {
-    gt_UntitledTrigger002 = TriggerCreate("gt_UntitledTrigger002_Func");
-    TriggerAddEventChatMessage(gt_UntitledTrigger002, c_playerAny, "doit", true);
+void gt_examplecreateunit_Init () {
+    gt_examplecreateunit = TriggerCreate("gt_examplecreateunit_Func");
+    TriggerAddEventMapInit(gt_examplecreateunit);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -100,8 +81,7 @@ void gt_UntitledTrigger002_Init () {
 //--------------------------------------------------------------------------------------------------
 void InitTriggers () {
     gt_MeleeInitialization_Init();
-    gt_UntitledTrigger001_Init();
-    gt_UntitledTrigger002_Init();
+    gt_examplecreateunit_Init();
 }
 
 //--------------------------------------------------------------------------------------------------

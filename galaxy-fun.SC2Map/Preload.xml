@@ -3,5 +3,4 @@
 <Actor id="SYSTEM_ActorConfig"/>
 <Terrain id="Zerus"/>
 <Unit id="Marine"/>
-<Unit id="BraxisAlphaDestructible1x1"/>
 </Preload>

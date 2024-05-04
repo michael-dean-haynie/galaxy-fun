@@ -4,7 +4,6 @@
         <Item Type="CustomScript" Id="78FD7498"/>
         <Item Type="Trigger" Id="FB83A08D"/>
         <Item Type="Trigger" Id="F3C717D9"/>
-        <Item Type="Trigger" Id="25B348BB"/>
     </Root>
     <Element Type="CustomScript" Id="78FD7498">
         <ScriptCode>
@@ -47,6 +46,7 @@
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000120"/>
     </Element>
     <Element Type="FunctionCall" Id="366CEC40">
+        <Disabled/>
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="F247156C"/>
         <Parameter Type="Param" Id="F35ED0FE"/>
         <Parameter Type="Param" Id="CE366C81"/>
@@ -95,6 +95,7 @@
         <ValueType Type="fixed"/>
     </Element>
     <Element Type="FunctionCall" Id="FBF05238">
+        <Disabled/>
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="F247156C"/>
         <Parameter Type="Param" Id="6C97EC8C"/>
         <Parameter Type="Param" Id="BED98B03"/>
@@ -143,6 +144,7 @@
         <ValueType Type="fixed"/>
     </Element>
     <Element Type="FunctionCall" Id="59887DF1">
+        <Disabled/>
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="F247156C"/>
         <Parameter Type="Param" Id="AD1F4510"/>
         <Parameter Type="Param" Id="F0D57DF3"/>
@@ -191,6 +193,7 @@
         <ValueType Type="fixed"/>
     </Element>
     <Element Type="FunctionCall" Id="CE593026">
+        <Disabled/>
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="F247156C"/>
         <Parameter Type="Param" Id="3A0C774F"/>
         <Parameter Type="Param" Id="53380CB1"/>
@@ -272,41 +275,14 @@
         <FunctionCall Type="FunctionCall" Id="3112BC0C"/>
     </Element>
     <Element Type="FunctionCall" Id="3112BC0C">
-        <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000022"/>
-        <Parameter Type="Param" Id="B2907815"/>
-        <Parameter Type="Param" Id="B6907E21"/>
+        <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000039"/>
+        <Parameter Type="Param" Id="1D62CA4C"/>
     </Element>
-    <Element Type="Param" Id="B2907815">
-        <ParameterDef Type="ParamDef" Library="Ntve" Id="00000034"/>
-        <Value>45.0</Value>
-        <ValueType Type="fixed"/>
+    <Element Type="Param" Id="1D62CA4C">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="00000070"/>
+        <FunctionCall Type="FunctionCall" Id="D1B2E8BA"/>
     </Element>
-    <Element Type="Param" Id="B6907E21">
-        <ParameterDef Type="ParamDef" Library="Ntve" Id="00000035"/>
-        <Value>45.0</Value>
-        <ValueType Type="fixed"/>
-    </Element>
-    <Element Type="Trigger" Id="25B348BB">
-        <Disabled/>
-        <Event Type="FunctionCall" Id="31066E1C"/>
-    </Element>
-    <Element Type="FunctionCall" Id="31066E1C">
-        <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000121"/>
-        <Parameter Type="Param" Id="55514188"/>
-        <Parameter Type="Param" Id="94949F0E"/>
-        <Parameter Type="Param" Id="6C5ED8AF"/>
-    </Element>
-    <Element Type="Param" Id="55514188">
-        <ParameterDef Type="ParamDef" Library="Ntve" Id="00000191"/>
-        <Preset Type="PresetValue" Library="Ntve" Id="2999701E"/>
-    </Element>
-    <Element Type="Param" Id="94949F0E">
-        <ParameterDef Type="ParamDef" Library="Ntve" Id="00000193"/>
-        <Preset Type="PresetValue" Library="Ntve" Id="00000073"/>
-    </Element>
-    <Element Type="Param" Id="6C5ED8AF">
-        <ParameterDef Type="ParamDef" Library="Ntve" Id="00000192"/>
-        <Value>doit</Value>
-        <ValueType Type="string"/>
+    <Element Type="FunctionCall" Id="D1B2E8BA">
+        <FunctionDef Type="FunctionDef" Library="Ntve" Id="46F2D5B8"/>
     </Element>
 </TriggerData>

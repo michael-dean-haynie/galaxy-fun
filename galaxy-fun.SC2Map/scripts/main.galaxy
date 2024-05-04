@@ -33,5 +33,5 @@ void main() {
 
     // registerChatCommand("lol", "Prints 'lol'.", false, true, cmdLol);
     gt_UntitledTrigger002TEMP_Init();
-    // createMaze();
+    createMaze();
 }

@@ -3,4 +3,7 @@
     <CUnit id="DestructibleSignsIcons">
         <LifeArmor value="0"/>
     </CUnit>
+    <CUnit id="Marine">
+        <Speed value="10"/>
+    </CUnit>
 </Catalog>
