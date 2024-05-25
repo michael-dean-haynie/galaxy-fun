@@ -1,10 +1,15 @@
-include "TriggerLibs/natives"
+include "TriggerLibs/NativeLib"
 
 include "LibD9BAB1B0_h"
 
 //--------------------------------------------------------------------------------------------------
 // Library: galaxy-fun-ext-mod-trigger-lib
 //--------------------------------------------------------------------------------------------------
+// External Library Initialization
+void libD9BAB1B0_InitLibraries () {
+    libNtve_InitVariables();
+}
+
 // Custom Script
 //--------------------------------------------------------------------------------------------------
 // Custom Script: bootstrap
@@ -13,6 +18,51 @@ include "scripts/main"
 
 void libD9BAB1B0_InitCustomScript () {
     main();
+}
+
+// Triggers
+//--------------------------------------------------------------------------------------------------
+// Trigger: try bank
+//--------------------------------------------------------------------------------------------------
+bool libD9BAB1B0_gt_trybank_Func (bool testConds, bool runActions) {
+    // Variable Declarations
+    int lv_mysection_mykey_initialValue;
+    int lv_mysection_mykey_newValue;
+
+    // Automatic Variable Declarations
+    // Variable Initialization
+
+    // Actions
+    if (!runActions) {
+        return true;
+    }
+
+    BankLoad("cadenzashelloworldbank", 1);
+    if ((BankKeyExists(BankLastCreated(), "mysection", "mykey") == true)) {
+        TriggerDebugOutput(1, StringExternal("Param/Value/lib_D9BAB1B0_CA763094"), true);
+        TriggerDebugOutput(1, IntToText(BankValueGetAsInt(BankLastCreated(), "mysection", "mykey")), true);
+    }
+    else {
+        TriggerDebugOutput(1, StringExternal("Param/Value/lib_D9BAB1B0_7B56E9B8"), true);
+    }
+    lv_mysection_mykey_initialValue = BankValueGetAsInt(BankLastCreated(), "mysection", "mykey");
+    lv_mysection_mykey_newValue = (lv_mysection_mykey_initialValue + 1);
+    BankValueSetFromInt(BankLastCreated(), "mysection", "mykey", lv_mysection_mykey_newValue);
+    BankSave(BankLastCreated());
+    TextExpressionSetToken("Param/Expression/lib_D9BAB1B0_E7082669", "A", FormatNumber(lv_mysection_mykey_initialValue));
+    TextExpressionSetToken("Param/Expression/lib_D9BAB1B0_E7082669", "B", FormatNumber(lv_mysection_mykey_newValue));
+    TriggerDebugOutput(1, TextExpressionAssemble("Param/Expression/lib_D9BAB1B0_E7082669"), true);
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+void libD9BAB1B0_gt_trybank_Init () {
+    libD9BAB1B0_gt_trybank = TriggerCreate("libD9BAB1B0_gt_trybank_Func");
+    TriggerAddEventMapInit(libD9BAB1B0_gt_trybank);
+}
+
+void libD9BAB1B0_InitTriggers () {
+    libD9BAB1B0_gt_trybank_Init();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -27,6 +77,8 @@ void libD9BAB1B0_InitLib () {
 
     libD9BAB1B0_InitLib_completed = true;
 
+    libD9BAB1B0_InitLibraries();
     libD9BAB1B0_InitCustomScript();
+    libD9BAB1B0_InitTriggers();
 }
 

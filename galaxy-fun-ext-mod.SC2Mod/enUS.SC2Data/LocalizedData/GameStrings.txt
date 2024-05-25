@@ -1,3 +1,6 @@
 ﻿DocInfo/DescLong=The purpose of this mod is purely to explore the process of developing and publishing an extension mod.
 DocInfo/DescShort=Any
 DocInfo/Name=Cadenza's Hello World Extension Mod
+Param/Expression/lib_D9BAB1B0_E7082669=cadenzashelloworldbank|mysection|mykey updated from ~A~ to ~B~
+Param/Value/lib_D9BAB1B0_7B56E9B8=cadenzashelloworldbank|mysection|mykey does not exist
+Param/Value/lib_D9BAB1B0_CA763094=cadenzashelloworldbank|mysection|mykey exists
