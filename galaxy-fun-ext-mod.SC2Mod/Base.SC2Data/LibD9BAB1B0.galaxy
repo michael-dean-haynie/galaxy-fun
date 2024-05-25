@@ -1,0 +1,32 @@
+include "TriggerLibs/natives"
+
+include "LibD9BAB1B0_h"
+
+//--------------------------------------------------------------------------------------------------
+// Library: galaxy-fun-ext-mod-trigger-lib
+//--------------------------------------------------------------------------------------------------
+// Custom Script
+//--------------------------------------------------------------------------------------------------
+// Custom Script: bootstrap
+//--------------------------------------------------------------------------------------------------
+include "scripts/main"
+
+void libD9BAB1B0_InitCustomScript () {
+    main();
+}
+
+//--------------------------------------------------------------------------------------------------
+// Library Initialization
+//--------------------------------------------------------------------------------------------------
+bool libD9BAB1B0_InitLib_completed = false;
+
+void libD9BAB1B0_InitLib () {
+    if (libD9BAB1B0_InitLib_completed) {
+        return;
+    }
+
+    libD9BAB1B0_InitLib_completed = true;
+
+    libD9BAB1B0_InitCustomScript();
+}
+

@@ -1,0 +1,23 @@
+const int MAX_PLAYERS = 7;
+static const string NAMESPACE = "ThisVariableCanOnlyBeAccessedIn main.galaxy";
+
+static void noopfunc() {
+    // This function can not be accessed outside this file.
+}
+void anothernoop() {
+    // This function can
+}
+
+void main() {
+    // This function is invoked from MapScript.galaxy when the map
+    // first loads.
+
+    // We never touch MapScript.galaxy from vscode, because
+    // sc2edit will overwrite it any time you hit Save in sc2edit.
+
+    // You are free to add, delete, rename, and otherwise do whatever
+    // you want inside the scripts/ folder before tabbing back to
+    // sc2edit, hitting c-F12 to Compile and c-F10 to run.
+
+    TriggerDebugOutput(1, StringToText("main() from main.galaxy has run"), true);
+}

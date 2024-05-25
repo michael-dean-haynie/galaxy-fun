@@ -1,0 +1,2 @@
+﻿CustomScript/Name/lib_D9BAB1B0_7672BF8B=bootstrap
+Library/Name/D9BAB1B0=galaxy-fun-ext-mod-trigger-lib

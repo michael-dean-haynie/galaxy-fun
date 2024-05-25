@@ -1,0 +1,3 @@
+﻿DocInfo/DescLong=The purpose of this mod is purely to explore the process of developing and publishing an extension mod.
+DocInfo/DescShort=Any
+DocInfo/Name=Cadenza's Hello World Extension Mod
