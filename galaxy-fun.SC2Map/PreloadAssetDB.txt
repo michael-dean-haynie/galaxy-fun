@@ -1,3 +1,10 @@
+[Abil]
+id=move
+asset=Assets\Textures\WayPointLine.dds
+asset=Assets\UI\Cursors\WayPointConfirm_Void\WayPointConfirm_Void.m3
+asset=Assets\UI\Cursors\WayPointMove_Void\WayPointMove_Void.m3
+Actor=CommandUIHarnessAttackProtoss,CommandUIHarnessAttackTerran,CommandUIHarnessAttackZerg,CommandUIHarnessConfirmProtoss,CommandUIHarnessConfirmTerran,CommandUIHarnessConfirmZerg,CommandUIHarnessMoveProtoss,CommandUIHarnessMoveTerran,CommandUIHarnessMoveZerg,CommandUIHarnessRallyProtoss,CommandUIHarnessRallyTerran,CommandUIHarnessRallyZerg,TerrainMgr
+
 [Actor]
 id=MissileTurret
 path=Assets\Textures\.dds
