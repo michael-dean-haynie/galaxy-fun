@@ -4,3 +4,7 @@ DocInfo/Name=Just Another StarCraft II Map
 MapInfo/Player00/Name=Neutral
 MapInfo/Player01/Name=Player 1
 MapInfo/Player02/Name=Hostile
+Param/Expression/51FA980A=cadenzashelloworldbank|mysection|mykey updated from ~A~ to ~B~
+Param/Value/6C5C7C10=cadenzashelloworldbank|mysection|mykey exists
+Param/Value/73287DD7=cadenzashelloworldbank|mysection|mykey does not exist
+Param/Value/7906CFE0=cadenzashelloworldbank|mysection|mykey exists

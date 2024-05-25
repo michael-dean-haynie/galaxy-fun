@@ -17,7 +17,7 @@ void InitLibs () {
 //--------------------------------------------------------------------------------------------------
 // Trigger Variables
 //--------------------------------------------------------------------------------------------------
-trigger gt_MeleeInitialization;
+trigger gt_trybank;
 
 //--------------------------------------------------------------------------------------------------
 // Custom Script: Bootstrap
@@ -32,33 +32,50 @@ void InitCustomScript () {
 }
 
 //--------------------------------------------------------------------------------------------------
-// Trigger: Melee Initialization
+// Trigger: try bank
 //--------------------------------------------------------------------------------------------------
-bool gt_MeleeInitialization_Func (bool testConds, bool runActions) {
+bool gt_trybank_Func (bool testConds, bool runActions) {
+    // Variable Declarations
+    int lv_mysection_mykey_initialValue;
+    int lv_mysection_mykey_newValue;
+
     // Automatic Variable Declarations
+    // Variable Initialization
+
     // Actions
     if (!runActions) {
         return true;
     }
 
-    MeleeInitResources();
-    MeleeInitUnits();
-    MeleeInitAI();
-    MeleeInitOptions();
+    BankLoad("cadenzashelloworldbank", 1);
+    if ((BankKeyExists(BankLastCreated(), "mysection", "mykey") == true)) {
+        TriggerDebugOutput(1, StringExternal("Param/Value/7906CFE0"), true);
+        TriggerDebugOutput(1, IntToText(BankValueGetAsInt(BankLastCreated(), "mysection", "mykey")), true);
+    }
+    else {
+        TriggerDebugOutput(1, StringExternal("Param/Value/73287DD7"), true);
+    }
+    lv_mysection_mykey_initialValue = BankValueGetAsInt(BankLastCreated(), "mysection", "mykey");
+    lv_mysection_mykey_newValue = (lv_mysection_mykey_initialValue + 1);
+    BankValueSetFromInt(BankLastCreated(), "mysection", "mykey", lv_mysection_mykey_newValue);
+    BankSave(BankLastCreated());
+    TextExpressionSetToken("Param/Expression/51FA980A", "A", FormatNumber(lv_mysection_mykey_initialValue));
+    TextExpressionSetToken("Param/Expression/51FA980A", "B", FormatNumber(lv_mysection_mykey_newValue));
+    TriggerDebugOutput(1, TextExpressionAssemble("Param/Expression/51FA980A"), true);
     return true;
 }
 
 //--------------------------------------------------------------------------------------------------
-void gt_MeleeInitialization_Init () {
-    gt_MeleeInitialization = TriggerCreate("gt_MeleeInitialization_Func");
-    TriggerAddEventMapInit(gt_MeleeInitialization);
+void gt_trybank_Init () {
+    gt_trybank = TriggerCreate("gt_trybank_Func");
+    TriggerAddEventMapInit(gt_trybank);
 }
 
 //--------------------------------------------------------------------------------------------------
 // Trigger Initialization
 //--------------------------------------------------------------------------------------------------
 void InitTriggers () {
-    gt_MeleeInitialization_Init();
+    gt_trybank_Init();
 }
 
 //--------------------------------------------------------------------------------------------------

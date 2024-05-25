@@ -1,2 +1,4 @@
 ﻿CustomScript/Name/78FD7498=Bootstrap
-Trigger/Name/FB83A08D=Melee Initialization
+Trigger/Name/DE1B03E1=try bank
+Variable/Name/29610CA3=mysection_mykey_newValue
+Variable/Name/4B5CEE56=mysection_mykey_initialValue
