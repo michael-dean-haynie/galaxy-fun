@@ -1,0 +1,99 @@
+//////////////////////////////////////////////////////////////////
+// CONSTANTS
+//////////////////////////////////////////////////////////////////
+
+// General Dimensions
+static const int HORIZONTAL_GAP = 10;
+static const int VERTICAL_GAP = 10;
+
+// Dialog Dimensions
+static const int DIALOG_PADDING = 40;
+
+// Icon Dimensions
+static const int ICON_WIDTH = 76;
+
+static const fixed LABEL_HEIGHT_MULT = 57 / 32; // FontHeight: 32, LabelHeight: 57 
+static const fixed LABEL_WIDTH_MULT = (140.0 / 10.0) / 32.0; // FontHeight: 32, CharacterCount: 10, LabelWidth: 140
+
+//////////////////////////////////////////////////////////////////
+// Functions
+//////////////////////////////////////////////////////////////////
+
+static int GetLabelHeight(int fontHeight) {
+    int result = 0;
+    result = FixedToInt(fontHeight * LABEL_HEIGHT_MULT);
+
+    // TriggerDebugOutput(1, StringToText("GetLabelHeight(" + IntToString(fontHeight) + "): " + IntToString(result)), true);
+    return result;
+}
+
+// Width is based off of height because of the way sc2 dialogs assume a fixed screen height (1200) and scales width according to user's resolution settings
+static int GetLabelWidth(int fontHeight, string str) {
+    int result = 0;
+    int characterCount = StringLength(str) + 1; // + 1 for to compensate for low precision constant (also, font is not monospaced?)
+    result = FixedToInt(fontHeight * LABEL_WIDTH_MULT * characterCount);
+
+    // TriggerDebugOutput(1, StringToText("GetLabelWidth(" + IntToString(fontHeight) + ", '" + str + "'): " + IntToString(result)), true);
+    // TriggerDebugOutput(1, StringToText("(characterCount: " + IntToString(characterCount) + " )"), true);
+    return result;
+}
+
+int CreateHotkeyPromptDialog(string headingStr, text structureTxt, string iconStr)
+{
+    int dialogWidth = 500;
+    int dialogHeight = 400;
+
+    int headingHeight = 0;
+    int headingWidth = 0;
+
+    int structureHeight = 0;
+    int structureWidth = 0;
+
+    int iconHeight = ICON_WIDTH;
+    int iconWidth = ICON_WIDTH;
+
+    int runningOffsetX = 0;
+    int runningOffsetY = 0;
+
+    // dialog
+    DialogCreate(dialogWidth, dialogHeight, c_anchorTop, 0, 0, true);
+    DialogSetVisible(DialogLastCreated(), PlayerGroupAll(), true);
+
+    // heading label
+    runningOffsetY += DIALOG_PADDING;
+    headingWidth = dialogWidth;
+    // headingHeight = GetLabelHeight(24);
+    headingHeight = 30;
+    dbg(IntToString(headingHeight));
+    libNtve_gf_CreateDialogItemLabel(DialogLastCreated(), headingWidth, headingHeight, c_anchorTop, runningOffsetX, runningOffsetY, StringToText(headingStr), ColorWithAlpha(0,0,0,0), false, 0.0);
+    libNtve_gf_SetDialogItemStyle(DialogControlLastCreated(), "StandardTextHCentered24", PlayerGroupAll());
+    DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);
+    runningOffsetY += headingHeight;
+    runningOffsetY += (VERTICAL_GAP * 3);
+
+    // structure label
+    // if (StringLength(structureTxt) > 0) {
+        structureWidth = dialogWidth;
+        // structureHeight = GetLabelHeight(24);
+        structureHeight = 30;
+        libNtve_gf_CreateDialogItemLabel(DialogLastCreated(), structureWidth, structureHeight, c_anchorTop, runningOffsetX, runningOffsetY, structureTxt, ColorWithAlpha(0,0,0,0), true, 0.5);
+        libNtve_gf_SetDialogItemStyle(DialogControlLastCreated(), "StandardTextHCentered24", PlayerGroupAll());
+        DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);
+        runningOffsetY += structureHeight;
+    // }
+
+    // icon
+    if (StringLength(iconStr) > 0) {
+        runningOffsetY += VERTICAL_GAP;
+        libNtve_gf_CreateDialogItemImage(DialogLastCreated(), iconWidth, iconHeight, c_anchorTop, runningOffsetX, runningOffsetY, StringToText(""), iconStr, c_triggerImageTypeNormal, false, Color(100,100,100), c_triggerBlendModeNormal);
+        DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);
+        runningOffsetY += iconHeight;
+    }
+
+    // dialog
+    runningOffsetY += (DIALOG_PADDING * 2);
+    dialogHeight = runningOffsetY;
+    DialogSetSize(DialogLastCreated(), dialogWidth, dialogHeight);
+
+    return DialogLastCreated();
+}

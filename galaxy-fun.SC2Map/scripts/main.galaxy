@@ -1,6 +1,10 @@
 const int MAX_PLAYERS = 7;
 static const string NAMESPACE = "ThisVariableCanOnlyBeAccessedIn main.galaxy";
 
+const int TERRAN_RACE = 0;
+const int ZERG_RACE = 1;
+const int PROTOSS_RACE = 2;
+
 static void noopfunc() {
     // This function can not be accessed outside this file.
 }
@@ -8,12 +12,12 @@ void anothernoop() {
     // This function can
 }
 
-// include "scripts/util"
+include "scripts/util"
 // include "scripts/cmd"
+include "scripts/dialogs"
+include "scripts/hotkeys"
+include "scripts/triggers"
 
-void cmdLol(string in, int p) {
-    // sys("lol", p);
-}
 
 void main() {
     // This function is invoked from MapScript.galaxy when the map
@@ -32,5 +36,12 @@ void main() {
 
     // registerChatCommand("lol", "Prints 'lol'.", false, true, cmdLol);
 
-    TriggerDebugOutput(1, StringToText("main() has run"), true);
+    // initialize scripts
+    initUtil(); // from scripts/util.galaxy
+    hotkeys_init();
+    triggers_init();
+
+    Development(); // fron hotkeys.galaxy
+
+    dbg("main() has run");
 }

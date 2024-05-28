@@ -2,4 +2,8 @@
 <Preload>
 <Actor id="SYSTEM_ActorConfig"/>
 <Terrain id="Zerus"/>
+<Unit id="SCV"/>
+<Unit id="Probe"/>
+<Unit id="Drone"/>
+<Unit id="VespeneGeyser"/>
 </Preload>

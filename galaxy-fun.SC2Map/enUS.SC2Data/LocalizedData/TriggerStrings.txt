@@ -1,2 +1,4 @@
 ﻿CustomScript/Name/78FD7498=Bootstrap
-Trigger/Name/FB83A08D=Melee Initialization
+Trigger/Name/546160B6=initialization
+Trigger/Name/FB83A08D=code-generation
+Variable/Name/935A0E38=screenHeight

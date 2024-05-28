@@ -1,0 +1,172 @@
+//////////////////////////////////////////////////////////////////
+// STRUCTS
+//////////////////////////////////////////////////////////////////
+
+struct HotkeyPrompt
+{
+    string instruction; // "Build Structure"
+    text targetTxt; // "Factory"
+    string icon; // "Assets\\Textures\\btn-building-terran-factory.dds"
+    string targetUnitId;
+};
+
+//////////////////////////////////////////////////////////////////
+// CONSTANTS
+//////////////////////////////////////////////////////////////////
+
+// Worker Unit Ids
+static string[3] WORKER_UNIT_IDS;
+
+// Build Ability Ids
+static string[3] BUILD_ABILITY_IDS;
+
+static string[3] BUILD_HOTKEY_PROMPT_INSTRUCTIONS;
+
+// Hotkey Prompts
+static HotkeyPrompt[3][30] BUILD_HOTKEY_PROMPTS;
+
+//////////////////////////////////////////////////////////////////
+// VARIABLES
+//////////////////////////////////////////////////////////////////
+
+static int activeHotkeyPromptRaceIdx;
+static int activeHotkeyPromptCmdIdx;
+static int activeHotkeyPromptDialog;
+
+//////////////////////////////////////////////////////////////////
+// FUNCTIONS
+//////////////////////////////////////////////////////////////////
+
+static void PromptUserForBuildStructureHotkey(int raceIdx) {
+    string workerUnitId = WORKER_UNIT_IDS[raceIdx];
+    string buildAbilityId = BUILD_ABILITY_IDS[raceIdx];
+
+    int cmdIdx = RandomInt(0, 29);
+    
+    while(BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].instruction == null) {
+        cmdIdx = RandomInt(0, 29);
+    }
+
+    // Remove Techtree Requirements / set resources / supply
+    TechTreeRequirementsEnable(1, false);
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 999999);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
+    // PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 200.0); // not working?
+
+    DialogDestroy(activeHotkeyPromptDialog);
+    activeHotkeyPromptDialog = CreateHotkeyPromptDialog(
+        BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].instruction,
+        BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].targetTxt,
+        BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].icon
+    );
+
+    
+    activeHotkeyPromptRaceIdx = raceIdx;
+    activeHotkeyPromptCmdIdx = cmdIdx;
+}
+
+static void InitBuildHotkeyPrompts() {
+    int raceIdx;
+    int cardLayoutsCount; // the number of card layouts on the worker unit
+    int cardLayoutsIdx;
+    int layoutButtonsCount; // the number of layout buttons in a card layout
+    int layoutButtonsIdx;
+
+    string abilCmdStr;
+    abilcmd abilCmd;
+    string unitId;
+    string unitNameStr;
+    text unitNameTxt;
+    string buttonId;
+    string iconStr;
+    HotkeyPrompt hotkeyPrompt;
+
+    string fieldPath;
+
+    for(raceIdx = 0; raceIdx < 3; raceIdx += 1) {
+        cardLayoutsCount = CatalogFieldValueCount(c_gameCatalogUnit, WORKER_UNIT_IDS[raceIdx], "CardLayouts", 1);
+        for(cardLayoutsIdx = 0; cardLayoutsIdx < cardLayoutsCount; cardLayoutsIdx += 1) {
+            fieldPath = "CardLayouts" + "[" + IntToString(cardLayoutsIdx) + "].LayoutButtons";
+            layoutButtonsCount = CatalogFieldValueCount(c_gameCatalogUnit, WORKER_UNIT_IDS[raceIdx], fieldPath, 1);
+            for(layoutButtonsIdx = 0; layoutButtonsIdx < layoutButtonsCount; layoutButtonsIdx += 1) {
+                fieldPath = "CardLayouts" + "[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].AbilCmd";
+                abilCmdStr = CatalogFieldValueGet(c_gameCatalogUnit, WORKER_UNIT_IDS[raceIdx], fieldPath, 1);
+                abilCmd = StringToAbilCmd(abilCmdStr);
+
+                // Ignore the "Halt" command - however that works...
+                if (AbilityCommandGetAbility(abilCmd) == BUILD_ABILITY_IDS[raceIdx] && !StringContains(abilCmdStr, ",Halt", 2, true)) {
+
+                    unitId = CatalogFieldValueGet(c_gameCatalogAbil, AbilityCommandGetAbility(abilCmd), "InfoArray[" + IntToString(AbilityCommandGetCommand(abilCmd)) + "].Unit", 1);
+                    unitNameStr = CatalogFieldValueGet(c_gameCatalogUnit, unitId, "Name", 1);
+                    unitNameTxt = StringExternal(unitNameStr);
+                    // printMsg(unitNameTxt, 1, c_messageTypeDebug);
+
+                    buttonId = CatalogFieldValueGet(c_gameCatalogAbil, AbilityCommandGetAbility(abilCmd), "InfoArray[" + IntToString(AbilityCommandGetCommand(abilCmd)) + "].Button.DefaultButtonFace", 1);
+                    iconStr = CatalogFieldValueGet(c_gameCatalogButton, buttonId, "Icon", 1);
+
+                    BUILD_HOTKEY_PROMPTS[raceIdx][AbilityCommandGetCommand(abilCmd)].instruction = BUILD_HOTKEY_PROMPT_INSTRUCTIONS[raceIdx];
+                    BUILD_HOTKEY_PROMPTS[raceIdx][AbilityCommandGetCommand(abilCmd)].targetTxt = unitNameTxt;
+                    BUILD_HOTKEY_PROMPTS[raceIdx][AbilityCommandGetCommand(abilCmd)].icon = iconStr;
+                    BUILD_HOTKEY_PROMPTS[raceIdx][AbilityCommandGetCommand(abilCmd)].targetUnitId = unitId;
+
+                }
+            }
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////////
+// Trigger Handlers
+//////////////////////////////////////////////////////////////////
+
+void hotkeys_onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
+    string unitType = UnitGetType(triggeringUnit);
+
+    if (triggeringAbil != BUILD_ABILITY_IDS[activeHotkeyPromptRaceIdx]) {
+        return; // unit was probably created by trigger or some other way
+    }
+
+    if (unitType == BUILD_HOTKEY_PROMPTS[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId) {
+        dbg("yay");
+        PromptUserForBuildStructureHotkey(activeHotkeyPromptRaceIdx);
+    }
+    else {
+        dbg("nay");
+    }
+
+    UnitKill(triggeringUnit);
+};
+
+void hotkeys_init() {
+    // Worker Unit Ids
+    WORKER_UNIT_IDS[0] = "SCV";
+    WORKER_UNIT_IDS[1] = "Drone";
+    WORKER_UNIT_IDS[2] = "Probe";
+
+    // Build Ability Ids
+    BUILD_ABILITY_IDS[0] = "TerranBuild";
+    BUILD_ABILITY_IDS[1] = "ZergBuild";
+    BUILD_ABILITY_IDS[2] = "ProtossBuild";
+
+    // Build Hotkey Prompt Instructions
+    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[0] = "Build Structure";
+    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[1] = "Mutate Into Structure";
+    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[2] = "Warp In Structure";
+
+    // Tweak range of build abilities
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[TERRAN_RACE], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[ZERG_RACE], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[PROTOSS_RACE], "Range", 1, "1000");
+
+    // Hotkey Prompts
+    InitBuildHotkeyPrompts();
+
+
+}
+
+void Development() {
+
+    PromptUserForBuildStructureHotkey(TERRAN_RACE);
+    // PromptUserForBuildStructureHotkey(ZERG_RACE);
+    // PromptUserForBuildStructureHotkey(PROTOSS_RACE);
+}

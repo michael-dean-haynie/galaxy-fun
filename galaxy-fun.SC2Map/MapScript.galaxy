@@ -17,7 +17,8 @@ void InitLibs () {
 //--------------------------------------------------------------------------------------------------
 // Trigger Variables
 //--------------------------------------------------------------------------------------------------
-trigger gt_MeleeInitialization;
+trigger gt_initialization;
+trigger gt_codegeneration;
 
 //--------------------------------------------------------------------------------------------------
 // Custom Script: Bootstrap
@@ -32,33 +33,85 @@ void InitCustomScript () {
 }
 
 //--------------------------------------------------------------------------------------------------
-// Trigger: Melee Initialization
+// Trigger: initialization
 //--------------------------------------------------------------------------------------------------
-bool gt_MeleeInitialization_Func (bool testConds, bool runActions) {
+bool gt_initialization_Func (bool testConds, bool runActions) {
+    // Variable Declarations
+    const int lv_screenHeight = 1200;
+
     // Automatic Variable Declarations
+    // Variable Initialization
+
     // Actions
     if (!runActions) {
         return true;
     }
 
-    MeleeInitResources();
-    MeleeInitUnits();
-    MeleeInitAI();
-    MeleeInitOptions();
+    libNtve_gf_CreateUnitsAtPoint2(1, "SCV", 0, 1, RegionGetCenter(RegionPlayableMap()));
+    libNtve_gf_CreateUnitsAtPoint2(1, "Drone", 0, 1, RegionGetCenter(RegionPlayableMap()));
+    libNtve_gf_CreateUnitsAtPoint2(1, "Probe", 0, 1, RegionGetCenter(RegionPlayableMap()));
+    CameraPan(1, RegionGetCenter(RegionPlayableMap()), 0.0, -1, 10.0, false);
     return true;
 }
 
 //--------------------------------------------------------------------------------------------------
-void gt_MeleeInitialization_Init () {
-    gt_MeleeInitialization = TriggerCreate("gt_MeleeInitialization_Func");
-    TriggerAddEventMapInit(gt_MeleeInitialization);
+void gt_initialization_Init () {
+    gt_initialization = TriggerCreate("gt_initialization_Func");
+    TriggerAddEventMapInit(gt_initialization);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Trigger: code-generation
+//--------------------------------------------------------------------------------------------------
+bool gt_codegeneration_Func (bool testConds, bool runActions) {
+    // Automatic Variable Declarations
+    // Conditions
+    if (testConds) {
+        if (!((EventUnitCreatedAbil() == "TerranBuild"))) {
+            return false;
+        }
+
+        if (!((EventUnit() == null))) {
+            return false;
+        }
+
+        if (!((EventUnitAbility() == AbilityCommand("TerranBuild", 1)))) {
+            return false;
+        }
+
+        if (!((EventUnitAbilityStage() == c_abilBuildStageApproach))) {
+            return false;
+        }
+    }
+
+    // Actions
+    if (!runActions) {
+        return true;
+    }
+
+    TriggerDebugOutput(1, StringExternal("Param/Value/A993EEF6"), true);
+    UnitIssueOrder(EventUnit(), Order(AbilityCommand("stop", 0)), c_orderQueueReplace);
+    TechTreeRequirementsEnable(1, false);
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 1000);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 1000);
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 200.0);
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+void gt_codegeneration_Init () {
+    gt_codegeneration = TriggerCreate("gt_codegeneration_Func");
+    TriggerEnable(gt_codegeneration, false);
+    TriggerAddEventUnitAbility(gt_codegeneration, null, null, c_unitAbilStageAll, false);
+    TriggerAddEventUnitCreated(gt_codegeneration, null, null, null);
 }
 
 //--------------------------------------------------------------------------------------------------
 // Trigger Initialization
 //--------------------------------------------------------------------------------------------------
 void InitTriggers () {
-    gt_MeleeInitialization_Init();
+    gt_initialization_Init();
+    gt_codegeneration_Init();
 }
 
 //--------------------------------------------------------------------------------------------------

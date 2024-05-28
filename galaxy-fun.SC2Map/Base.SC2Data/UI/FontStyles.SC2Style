@@ -152,4 +152,31 @@
     <Style name="CommandTooltipInventory" template="MyTooltipInfo"/>
 
     <Style name="GlueButton" template="MyTooltipTitle" height="22" hjustify="Center"/>
+
+
+    <!-- From https://www.sc2mapster.com/forums/resources/tutorials/179652-dialogs-really-great-looking-dialogs-part-3 -->
+    <Style name="StandardText" template="StandardExtendedTemplate" height="16" textcolor="#ColorWhite"/>
+    <!-- <Style name="HeaderText" template="HeaderExtendedTemplate" height="24" textcolor="#ColorWhite"/> 
+
+    <Style name="StandardParagraphText" template="StandardText" hjustify="Left" vjustify="Top"/>
+    <Style name="HeaderCenterText" template="HeaderText" hjustify="Center" vjustify="Middle"/>
+
+    <Style name="DialogItemText" template="HeaderText" height="20" hjustify="Left" vjustify="Middle"/>
+    <Style name="DialogButtonText" template="HeaderText" hjustify="Center" vjustify="Middle"/> -->
+
+    <!-- (mine) -->
+    <Style name="StandardText12" template="StandardExtendedTemplate" height="12" textcolor="#ColorWhite"/>
+    <Style name="StandardText16" template="StandardExtendedTemplate" textcolor="#ColorWhite"/>
+    <Style name="StandardText20" template="StandardExtendedTemplate" height="20" textcolor="#ColorWhite"/>
+    <Style name="StandardText24" template="StandardExtendedTemplate" height="24" textcolor="#ColorWhite"/>
+    <Style name="StandardText28" template="StandardExtendedTemplate" height="28" textcolor="#ColorWhite"/>
+    <Style name="StandardText32" template="StandardExtendedTemplate" height="32" textcolor="#ColorWhite"/>
+
+    <Style name="StandardTextHCentered12" template="StandardExtendedTemplate" height="12" hjustify="Center" textcolor="#ColorWhite"/>
+    <Style name="StandardTextHCentered16" template="StandardExtendedTemplate" hjustify="Center" textcolor="#ColorWhite"/>
+    <Style name="StandardTextHCentered20" template="StandardExtendedTemplate" height="20" hjustify="Center" textcolor="#ColorWhite"/>
+    <Style name="StandardTextHCentered24" template="StandardExtendedTemplate" height="24" hjustify="Center" textcolor="#ColorWhite"/>
+    <Style name="StandardTextHCentered28" template="StandardExtendedTemplate" height="28" hjustify="Center" textcolor="#ColorWhite"/>
+    <Style name="StandardTextHCentered32" template="StandardExtendedTemplate" height="32" hjustify="Center" textcolor="#ColorWhite"/>
+
 </StyleFile>
