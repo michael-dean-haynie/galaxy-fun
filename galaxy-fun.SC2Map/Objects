@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PlacedObjects Version="27">
-    <ObjectUnit Id="1869343994" Position="60.5,63.5,0" Scale="1,1,1" UnitType="VespeneGeyser"/>
+    <ObjectPoint Id="1473694793" Position="64,64,0" Scale="1,1,1" Type="Normal" Name="hotkeytraining_structure_location" Color="0,0,0,0"/>
+    <ObjectPoint Id="1622341979" Position="60,64,0" Scale="1,1,1" Type="Normal" Name="hotkeytraining_active_unit_location" Color="0,0,0,0"/>
 </PlacedObjects>

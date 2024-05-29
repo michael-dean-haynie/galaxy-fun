@@ -4,6 +4,12 @@
 
 trigger unitIsCreatedTrig;
 
+// Screen Button Triggers
+trigger showHideSBTrig;
+trigger terranSBTrig;
+trigger zergSBTrig;
+trigger protossSBTrig;
+
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
@@ -24,9 +30,62 @@ bool unitIsCreatedTrig_Func (bool testConds, bool runActions) {
 }
 
 //////////////////////////////////////////////////////////////////
+
+void showHideSBTrig_Init () {
+    showHideSBTrig = TriggerCreate("showHideSBTrig_Func");
+}
+
+bool showHideSBTrig_Func (bool testConds, bool runActions) {
+    dbg("toggling ui");
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
+void terranSBTrig_Init () {
+    terranSBTrig = TriggerCreate("terranSBTrig_Func");
+}
+
+bool terranSBTrig_Func (bool testConds, bool runActions) {
+    PlayerSetRace(1, "Terr");
+    PromptUserForBuildStructureHotkey(TERRAN_RACE);
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
+void zergSBTrig_Init () {
+    zergSBTrig = TriggerCreate("zergSBTrig_Func");
+}
+
+bool zergSBTrig_Func (bool testConds, bool runActions) {
+    PlayerSetRace(1, "Zerg");
+    PromptUserForBuildStructureHotkey(ZERG_RACE);
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
+void protossSBTrig_Init () {
+    protossSBTrig = TriggerCreate("protossSBTrig_Func");
+}
+
+bool protossSBTrig_Func (bool testConds, bool runActions) {
+    PlayerSetRace(1, "Prot");
+    PromptUserForBuildStructureHotkey(PROTOSS_RACE);
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
 // SCRIPT INIT
 //////////////////////////////////////////////////////////////////
 
 void triggers_init() {
     unitIsCreatedTrig_Init();
+
+    // Screen Button Triggers
+    showHideSBTrig_Init();
+    terranSBTrig_Init();
+    zergSBTrig_Init();
+    protossSBTrig_Init();
 }

@@ -64,7 +64,6 @@ int CreateHotkeyPromptDialog(string headingStr, text structureTxt, string iconSt
     headingWidth = dialogWidth;
     // headingHeight = GetLabelHeight(24);
     headingHeight = 30;
-    dbg(IntToString(headingHeight));
     libNtve_gf_CreateDialogItemLabel(DialogLastCreated(), headingWidth, headingHeight, c_anchorTop, runningOffsetX, runningOffsetY, StringToText(headingStr), ColorWithAlpha(0,0,0,0), false, 0.0);
     libNtve_gf_SetDialogItemStyle(DialogControlLastCreated(), "StandardTextHCentered24", PlayerGroupAll());
     DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);

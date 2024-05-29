@@ -13,10 +13,10 @@ void anothernoop() {
 }
 
 include "scripts/util"
-// include "scripts/cmd"
 include "scripts/dialogs"
 include "scripts/hotkeys"
 include "scripts/triggers"
+include "scripts/screen-buttons"
 
 
 void main() {
@@ -40,6 +40,7 @@ void main() {
     initUtil(); // from scripts/util.galaxy
     hotkeys_init();
     triggers_init();
+    screenButtons_init();
 
     Development(); // fron hotkeys.galaxy
 
