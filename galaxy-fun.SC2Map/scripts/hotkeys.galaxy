@@ -89,7 +89,7 @@ void PromptUserForBuildStructureHotkey(int raceIdx) {
         gasPropUnit = null;
     }
     if (gasPropUnit == null && BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].targetUnitId == GAS_STRUCTURE_IDS[raceIdx]) {
-        libNtve_gf_CreateUnitsAtPoint2(1, GAS_UNIT_ID, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_structure_location"));
+        libNtve_gf_CreateUnitsAtPoint2(1, GAS_UNIT_ID, c_unitCreateIgnorePlacement, 1,PointWithOffset(PointFromName("hotkeytraining_structure_location"), -1, 0) );
         gasPropUnit = UnitLastCreated();
     }
 
