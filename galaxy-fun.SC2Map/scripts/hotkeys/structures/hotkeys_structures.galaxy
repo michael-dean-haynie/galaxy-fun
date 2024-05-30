@@ -11,11 +11,11 @@ static string PYLON_UNIT_ID = "Pylon";
 
 static string[3] BUILD_HOTKEY_PROMPT_INSTRUCTIONS;
 
-static hk__prompt[3][30] BUILD_HOTKEY_PROMPTS;
-
 //////////////////////////////////////////////////////////////////
 // VARIABLES
 //////////////////////////////////////////////////////////////////
+
+static bool initialized = false;
 
 static int activeHotkeyPromptRaceIdx;
 static int activeHotkeyPromptCmdIdx;
@@ -45,25 +45,25 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
     int cmdIdx = RandomInt(0, 29);
     
     // random abilcmd
-    while(BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].instruction == null) {
+    while(hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].instruction == null) {
         cmdIdx = RandomInt(0, 29);
     }
     activeHotkeyPromptRaceIdx = raceIdx;
     activeHotkeyPromptCmdIdx = cmdIdx;
 
     // tweak range of build abilities
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[TERRAN_RACE], "Range", 1, "1000");
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[ZERG_RACE], "Range", 1, "1000");
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[PROTOSS_RACE], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[TERRAN], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[ZERG], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[PROTOSS], "Range", 1, "1000");
 
     // dialog
     if (activeHotkeyPromptDialog != 0) {
         DialogDestroy(activeHotkeyPromptDialog);
     }
     activeHotkeyPromptDialog = dg__createHotkeyPromptDialog(
-        BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].instruction,
-        BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].targetTxt,
-        BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].icon
+        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].instruction,
+        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetTxt,
+        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].icon
     );
 
     // worker
@@ -79,30 +79,30 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
     UnitIssueOrder(activeHotkeyPromptUnit, Order(AbilityCommand("stop", 0)), c_orderQueueReplace);
 
     // gas (if needed)
-    if (gasPropUnit != null && BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].targetUnitId != GAS_STRUCTURE_IDS[raceIdx]) {
+    if (gasPropUnit != null && hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId != GAS_STRUCTURE_IDS[raceIdx]) {
         UnitRemove(gasPropUnit);
         gasPropUnit = null;
     }
-    if (gasPropUnit == null && BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].targetUnitId == GAS_STRUCTURE_IDS[raceIdx]) {
+    if (gasPropUnit == null && hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId == GAS_STRUCTURE_IDS[raceIdx]) {
         libNtve_gf_CreateUnitsAtPoint2(1, GAS_UNIT_ID, c_unitCreateIgnorePlacement, 1,PointWithOffset(PointFromName("hotkeytraining_structure_location"), -1, 0) );
         gasPropUnit = UnitLastCreated();
     }
 
     // pylon (if needed)
-    if (pylonPropUnit != null && raceIdx != PROTOSS_RACE) {
+    if (pylonPropUnit != null && raceIdx != PROTOSS) {
         UnitRemove(pylonPropUnit);
         pylonPropUnit = null;
     }
-    if (pylonPropUnit == null && raceIdx == PROTOSS_RACE) {
+    if (pylonPropUnit == null && raceIdx == PROTOSS) {
         libNtve_gf_CreateUnitsAtPoint2(1, PYLON_UNIT_ID, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
         pylonPropUnit = UnitLastCreated();
     }
 
     // creep (if needed)
-    if (raceIdx == ZERG_RACE) {
+    if (raceIdx == ZERG) {
         CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, true, true);
     }
-    if (raceIdx != ZERG_RACE) {
+    if (raceIdx != ZERG) {
         CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
     }
 
@@ -115,21 +115,32 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
 
 void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
     string unitType = UnitGetType(triggeringUnit);
+    string structureId = hk_st__buildHotkeyPrompts[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId;
 
     if (triggeringAbil != BUILD_ABILITY_IDS[activeHotkeyPromptRaceIdx]) {
         return; // unit was probably created by trigger or some other way
     }
 
-    if (unitType == BUILD_HOTKEY_PROMPTS[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId) {
+    if (unitType == hk_st__buildHotkeyPrompts[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId) {
         dbg("yay");
+        bk__saveHotkeysStructuresAttempt(activeHotkeyPromptRaceIdx, structureId, true);
         promptUserForBuildStructureHotkey(activeHotkeyPromptRaceIdx);
     }
     else {
         dbg("nay");
+        bk__saveHotkeysStructuresAttempt(activeHotkeyPromptRaceIdx, structureId, false);
     }
 
     // Stop building the structure immediately
     UnitIssueOrder(triggeringUnit, Order(AbilityCommand("BuildInProgress", 0)), c_orderQueueReplace);
+}
+
+bool hk_st__buildHotkeyPromptHasValue(int raceIdx, int cmdIdx) {
+    hk_st__init();
+    if (hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId != null) {
+        return true;
+    }
+    return false;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -137,6 +148,10 @@ void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
 //////////////////////////////////////////////////////////////////
 
 void hk_st__init() {
+    if (initialized) {
+        return;
+    }
+
     WORKER_UNIT_IDS[0] = "SCV";
     WORKER_UNIT_IDS[1] = "Drone";
     WORKER_UNIT_IDS[2] = "Probe";
@@ -155,6 +170,8 @@ void hk_st__init() {
 
     // Hotkey Prompts
     initBuildHotkeyPrompts();
+
+    initialized = true;
 }
 
 static void initBuildHotkeyPrompts () {
@@ -196,10 +213,10 @@ static void initBuildHotkeyPrompts () {
                     buttonId = CatalogFieldValueGet(c_gameCatalogAbil, AbilityCommandGetAbility(abilCmd), "InfoArray[" + IntToString(AbilityCommandGetCommand(abilCmd)) + "].Button.DefaultButtonFace", 1);
                     iconStr = CatalogFieldValueGet(c_gameCatalogButton, buttonId, "Icon", 1);
 
-                    BUILD_HOTKEY_PROMPTS[raceIdx][AbilityCommandGetCommand(abilCmd)].instruction = BUILD_HOTKEY_PROMPT_INSTRUCTIONS[raceIdx];
-                    BUILD_HOTKEY_PROMPTS[raceIdx][AbilityCommandGetCommand(abilCmd)].targetTxt = unitNameTxt;
-                    BUILD_HOTKEY_PROMPTS[raceIdx][AbilityCommandGetCommand(abilCmd)].icon = iconStr;
-                    BUILD_HOTKEY_PROMPTS[raceIdx][AbilityCommandGetCommand(abilCmd)].targetUnitId = unitId;
+                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].instruction = BUILD_HOTKEY_PROMPT_INSTRUCTIONS[raceIdx];
+                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].targetTxt = unitNameTxt;
+                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].icon = iconStr;
+                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].targetUnitId = unitId;
 
                 }
             }

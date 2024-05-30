@@ -1,0 +1,171 @@
+//////////////////////////////////////////////////////////////////
+// STRUCTS
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// CONSTANTS
+//////////////////////////////////////////////////////////////////
+
+static const string BANK_NAME = "cadenzasTrainingGround";
+
+static const string ALL_TIME_ATTEMPTS = "allTimeAttempts";
+static const string ALL_TIME_FAILURES = "allTimeFailures";
+static const string MOST_RECENT_SESSION_ATTEMPTS = "mostRecentSessionAttempts";
+static const string MOST_RECENT_SESSION_FAILURES = "mostRecentSessionFailures";
+static const string CURRENT_SESSION_ATTEMPTS = "currentSessionAttempts";
+static const string CURRENT_SESSION_FAILURES = "currentSessionFailures";
+
+//////////////////////////////////////////////////////////////////
+// VARIABLES
+//////////////////////////////////////////////////////////////////
+
+static bank ctgBank;
+
+//////////////////////////////////////////////////////////////////
+// FUNCTIONS
+//////////////////////////////////////////////////////////////////
+
+// static function declarations
+void initHotkeysStructuresSections();
+void progressHotkeysStructuresSections();
+
+string bk__raceId(int raceInt) {
+    if (raceInt == 0) {
+        return "terran";
+    }
+    if (raceInt == 1) {
+        return "zerg";
+    }
+    if (raceInt == 2) {
+        return "protoss";
+    }
+    return null;
+}
+
+int bk__raceInt(string raceId) {
+    if (raceId == "terran") {
+        return 0;
+    }
+    if (raceId == "zerg") {
+        return 1;
+    }
+    if (raceId == "protoss") {
+        return 2;
+    }
+    return -1;
+}
+
+void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool attemptWasSuccessful) {
+    string sectionName = "hotkeys.structures." + bk__raceId(raceInt) + "." + structureId;
+    int existingAllTimeAttempts;
+    int existingAllTimeFailures;
+    int existingCurrentSessionAttempts;
+    int existingCurrentSessionFailures;
+
+    existingAllTimeAttempts = BankValueGetAsInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS);
+    existingAllTimeFailures = BankValueGetAsInt(ctgBank, sectionName, ALL_TIME_FAILURES);
+    existingCurrentSessionAttempts = BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS);
+    existingCurrentSessionFailures = BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES);
+
+    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS, existingAllTimeAttempts + 1);
+    BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS, existingCurrentSessionAttempts + 1);
+
+    if (!attemptWasSuccessful) {
+        BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_FAILURES, existingAllTimeFailures + 1);
+        BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES, existingCurrentSessionFailures + 1);
+    }
+
+    BankSave(ctgBank);
+
+    dbg(sectionName + "." + ALL_TIME_ATTEMPTS + ": " + IntToString(existingAllTimeAttempts) + " -> " + IntToString(BankValueGetAsInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS)));
+    dbg(sectionName + "." + ALL_TIME_FAILURES + ": " + IntToString(existingAllTimeFailures) + " -> " + IntToString(BankValueGetAsInt(ctgBank, sectionName, ALL_TIME_FAILURES)));
+    dbg(sectionName + "." + CURRENT_SESSION_ATTEMPTS + ": " + IntToString(existingCurrentSessionAttempts) + " -> " + IntToString(BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS)));
+    dbg(sectionName + "." + CURRENT_SESSION_FAILURES + ": " + IntToString(existingCurrentSessionFailures) + " -> " + IntToString(BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES)));
+}
+
+//////////////////////////////////////////////////////////////////
+// Initialization
+//////////////////////////////////////////////////////////////////
+
+void bk__init() {
+    ctgBank = BankLoad("cadenzasTrainingGround", 1);
+    // BankReload(ctgBank);
+    // BankWait(ctgBank);
+    BankSave(ctgBank);
+
+    // initialize sections
+    initHotkeysStructuresSections();
+    BankSave(ctgBank);
+
+    // progress sections (move "current" data (from last game) to "most recent" data)
+    progressHotkeysStructuresSections();
+    BankSave(ctgBank);
+}
+
+void initHotkeysStructuresSections() {
+    int raceIdx;
+    int cmdIdx;
+    string sectionName;
+    string structureId;
+
+    hk_st__init(); // make sure constants have been initialized
+
+    for(raceIdx = 0; raceIdx < RACE_COUNT; raceIdx += 1) {
+        for(cmdIdx = 0; cmdIdx < hk_st__buildHotkeyPromptCmdCount; cmdIdx += 1) {
+            if (hk_st__buildHotkeyPromptHasValue(raceIdx, cmdIdx)) {
+                structureId = hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId;
+                sectionName = "hotkeys.structures." + bk__raceId(raceIdx) + "." + structureId;
+
+                dbg(sectionName + " exists: " + libNtve_gf_ConvertBooleanToString(BankSectionExists(ctgBank, sectionName)));
+                dbg(sectionName + " keyCount: " + IntToString(BankKeyCount(ctgBank, sectionName)));
+
+                if(!BankSectionExists(ctgBank, sectionName)) {
+                    dbg("initializing " + sectionName);
+                    BankSectionCreate(ctgBank, sectionName);
+                    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_FAILURES, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_ATTEMPTS, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_FAILURES, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES, 0);
+                }
+            }
+        }
+    }
+
+}
+
+void progressHotkeysStructuresSections() {
+    int raceIdx;
+    int cmdIdx;
+    string sectionName;
+    string structureId;
+
+    int currentSessionAttempts;
+    int currentSessionFailures;
+
+    hk_st__init(); // make sure constants have been initialized
+
+    for(raceIdx = 0; raceIdx < RACE_COUNT; raceIdx += 1) {
+        for(cmdIdx = 0; cmdIdx < hk_st__buildHotkeyPromptCmdCount; cmdIdx += 1) {
+            if (hk_st__buildHotkeyPromptHasValue(raceIdx, cmdIdx)) {
+                structureId = hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId;
+                sectionName = "hotkeys.structures." + bk__raceId(raceIdx) + "." + structureId;
+
+                currentSessionAttempts = BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS);
+                currentSessionFailures = BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES);
+
+                if (currentSessionAttempts > 0) {
+                    // move last session data
+                    BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_ATTEMPTS, currentSessionAttempts);
+                    BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_FAILURES, currentSessionFailures);
+
+                    // start fresh for this session
+                    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_FAILURES, 0);
+                }
+            }
+        }
+    }
+
+}

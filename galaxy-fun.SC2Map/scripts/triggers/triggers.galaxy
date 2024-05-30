@@ -40,7 +40,7 @@ void terranSB_Init () {
 
 bool tr__terranSB_Func (bool testConds, bool runActions) {
     PlayerSetRace(1, "Terr");
-    hk_st__begin(TERRAN_RACE);
+    hk_st__begin(TERRAN);
     return true;
 }
 
@@ -52,7 +52,7 @@ void zergSB_Init () {
 
 bool tr__zergSB_Func (bool testConds, bool runActions) {
     PlayerSetRace(1, "Zerg");
-    hk_st__begin(ZERG_RACE);
+    hk_st__begin(ZERG);
     return true;
 }
 
@@ -64,7 +64,7 @@ void protossSB_Init () {
 
 bool tr__protossSB_Func (bool testConds, bool runActions) {
     PlayerSetRace(1, "Prot");
-    hk_st__begin(PROTOSS_RACE);
+    hk_st__begin(PROTOSS);
     return true;
 }
 

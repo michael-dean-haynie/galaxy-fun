@@ -1,16 +1,12 @@
-const int TERRAN_RACE = 0;
-const int ZERG_RACE = 1;
-const int PROTOSS_RACE = 2;
-
-// TODO: remove old
-// include "scripts/util"
-// include "scripts/dialogs"
-// include "scripts/hotkeys"
-// include "scripts/triggers"
-// include "scripts/screen-buttons"
+const int TERRAN = 0;
+const int ZERG = 1;
+const int PROTOSS = 2;
+const int RACE_COUNT = 3;
 
 // module headers
 include "scripts/util/util_h"
+include "scripts/catalog/catalog_h"
+include "scripts/bank/bank_h"
 include "scripts/triggers/triggers_h"
 include "scripts/dialogs/dialogs_h"
 include "scripts/screenbuttons/screenbuttons_h"
@@ -18,6 +14,8 @@ include "scripts/hotkeys/structures/hotkeys_structures_h"
 
 // module implementations
 include "scripts/util/util"
+include "scripts/catalog/catalog"
+include "scripts/bank/bank"
 include "scripts/triggers/triggers"
 include "scripts/dialogs/dialogs"
 include "scripts/screenbuttons/screenbuttons"
@@ -26,9 +24,11 @@ include "scripts/hotkeys/structures/hotkeys_structures"
 
 void main() {
     // initialization
-    ut__init(); // util/util.galaxy
-    tr__init(); // triggers/triggers.galaxy
-    dg__init(); // dialogs/dialogs.galaxy
-    sb__init(); // screenbuttons/screenbuttons.galaxy
-    hk_st__init(); // hotkeys/structures/hotkeys_structures.galaxy
+    ut__init();     // util/util.galaxy
+    ct__init();     // catalog/catalog.galaxy
+    bk__init();     // bank/bank.galaxy
+    tr__init();     // triggers/triggers.galaxy
+    dg__init();     // dialogs/dialogs.galaxy
+    sb__init();     // screenbuttons/screenbuttons.galaxy
+    hk_st__init();  // hotkeys/structures/hotkeys_structures.galaxy
 }

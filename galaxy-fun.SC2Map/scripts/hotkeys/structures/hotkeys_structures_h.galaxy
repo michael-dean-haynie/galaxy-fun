@@ -14,6 +14,9 @@ struct hk__prompt
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
+hk__prompt[3][30] hk_st__buildHotkeyPrompts;
+int hk_st__buildHotkeyPromptCmdCount = 30;
+
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
@@ -21,3 +24,5 @@ struct hk__prompt
 void hk_st__init();
 void hk_st__begin(int raceIdx);
 void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil);
+
+bool hk_st__buildHotkeyPromptHasValue(int raceIdx, int cmdIdx);
