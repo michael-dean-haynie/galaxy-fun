@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PlacedObjects Version="27">
+    <ObjectPoint Id="1680497645" Position="68,64,0" Scale="1,1,1" Type="Normal" Name="hotkeytraining_pylon_location" Color="0,0,0,0"/>
     <ObjectPoint Id="1473694793" Position="64,64,0" Scale="1,1,1" Type="Normal" Name="hotkeytraining_structure_location" Color="0,0,0,0"/>
     <ObjectPoint Id="1622341979" Position="60,64,0" Scale="1,1,1" Type="Normal" Name="hotkeytraining_active_unit_location" Color="0,0,0,0"/>
 </PlacedObjects>
