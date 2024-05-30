@@ -71,7 +71,7 @@ void sys(string msg) { printMsg(StringToText(msg), 1, c_messageTypeSystem); }
 //     return PlayerGroupHasPlayer(pg, p);
 // }
 
-void initUtil() {
+void ut__init() {
     messageColors[c_messageTypeDebug] = StringToText("<c val=\"FF6600\">");
     messageColors[c_messageTypeSystem] = StringToText("<c val=\"FFFF00\">");
     messageColors[c_messageTypeError] = StringToText("<c val=\"FF0000\">");

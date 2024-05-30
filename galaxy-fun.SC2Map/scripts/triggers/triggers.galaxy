@@ -1,0 +1,83 @@
+//////////////////////////////////////////////////////////////////
+// VARIABLES
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// FUNCTIONS
+//////////////////////////////////////////////////////////////////
+
+void unitIsCreated_Init () {
+    tr__unitIsCreated = TriggerCreate("tr__unitIsCreated_Func");
+    TriggerAddEventUnitCreated(tr__unitIsCreated, null, null, null);
+}
+
+bool tr__unitIsCreated_Func (bool testConds, bool runActions) {
+    if (!runActions) {
+        return true;
+    }
+
+    hk_st__onUnitIsCreated(EventUnitCreatedUnit(), EventUnitCreatedAbil());
+
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
+void showHideSB_Init () {
+    tr__showHideSB = TriggerCreate("tr__showHideSB_Func");
+}
+
+bool tr__showHideSB_Func (bool testConds, bool runActions) {
+    dbg("toggling ui");
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
+void terranSB_Init () {
+    tr__terranSB = TriggerCreate("tr__terranSB_Func");
+}
+
+bool tr__terranSB_Func (bool testConds, bool runActions) {
+    PlayerSetRace(1, "Terr");
+    hk_st__begin(TERRAN_RACE);
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
+void zergSB_Init () {
+    tr__zergSB = TriggerCreate("tr__zergSB_Func");
+}
+
+bool tr__zergSB_Func (bool testConds, bool runActions) {
+    PlayerSetRace(1, "Zerg");
+    hk_st__begin(ZERG_RACE);
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
+void protossSB_Init () {
+    tr__protossSB = TriggerCreate("tr__protossSB_Func");
+}
+
+bool tr__protossSB_Func (bool testConds, bool runActions) {
+    PlayerSetRace(1, "Prot");
+    hk_st__begin(PROTOSS_RACE);
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+// Initialization
+//////////////////////////////////////////////////////////////////
+
+void tr__init() {
+    unitIsCreated_Init();
+
+    // Screen Button Triggers
+    showHideSB_Init();
+    terranSB_Init();
+    zergSB_Init();
+    protossSB_Init();
+}

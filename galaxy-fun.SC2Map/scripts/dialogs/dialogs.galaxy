@@ -16,29 +16,29 @@ static const fixed LABEL_HEIGHT_MULT = 57 / 32; // FontHeight: 32, LabelHeight: 
 static const fixed LABEL_WIDTH_MULT = (140.0 / 10.0) / 32.0; // FontHeight: 32, CharacterCount: 10, LabelWidth: 140
 
 //////////////////////////////////////////////////////////////////
-// Functions
+// FUNCTIONS
 //////////////////////////////////////////////////////////////////
 
-static int GetLabelHeight(int fontHeight) {
-    int result = 0;
-    result = FixedToInt(fontHeight * LABEL_HEIGHT_MULT);
+// static int GetLabelHeight(int fontHeight) {
+//     int result = 0;
+//     result = FixedToInt(fontHeight * LABEL_HEIGHT_MULT);
 
-    // TriggerDebugOutput(1, StringToText("GetLabelHeight(" + IntToString(fontHeight) + "): " + IntToString(result)), true);
-    return result;
-}
+//     // TriggerDebugOutput(1, StringToText("GetLabelHeight(" + IntToString(fontHeight) + "): " + IntToString(result)), true);
+//     return result;
+// }
 
-// Width is based off of height because of the way sc2 dialogs assume a fixed screen height (1200) and scales width according to user's resolution settings
-static int GetLabelWidth(int fontHeight, string str) {
-    int result = 0;
-    int characterCount = StringLength(str) + 1; // + 1 for to compensate for low precision constant (also, font is not monospaced?)
-    result = FixedToInt(fontHeight * LABEL_WIDTH_MULT * characterCount);
+// // Width is based off of height because of the way sc2 dialogs assume a fixed screen height (1200) and scales width according to user's resolution settings
+// static int GetLabelWidth(int fontHeight, string str) {
+//     int result = 0;
+//     int characterCount = StringLength(str) + 1; // + 1 for to compensate for low precision constant (also, font is not monospaced?)
+//     result = FixedToInt(fontHeight * LABEL_WIDTH_MULT * characterCount);
 
-    // TriggerDebugOutput(1, StringToText("GetLabelWidth(" + IntToString(fontHeight) + ", '" + str + "'): " + IntToString(result)), true);
-    // TriggerDebugOutput(1, StringToText("(characterCount: " + IntToString(characterCount) + " )"), true);
-    return result;
-}
+//     // TriggerDebugOutput(1, StringToText("GetLabelWidth(" + IntToString(fontHeight) + ", '" + str + "'): " + IntToString(result)), true);
+//     // TriggerDebugOutput(1, StringToText("(characterCount: " + IntToString(characterCount) + " )"), true);
+//     return result;
+// }
 
-int CreateHotkeyPromptDialog(string headingStr, text structureTxt, string iconStr)
+int dg__createHotkeyPromptDialog(string headingStr, text structureTxt, string iconStr)
 {
     int dialogWidth = 500;
     int dialogHeight = 400;
@@ -95,4 +95,12 @@ int CreateHotkeyPromptDialog(string headingStr, text structureTxt, string iconSt
     DialogSetSize(DialogLastCreated(), dialogWidth, dialogHeight);
 
     return DialogLastCreated();
+}
+
+//////////////////////////////////////////////////////////////////
+// Initialization
+//////////////////////////////////////////////////////////////////
+
+void dg__init() {
+    // empty
 }

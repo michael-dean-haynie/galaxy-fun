@@ -1,36 +1,17 @@
 //////////////////////////////////////////////////////////////////
-// STRUCTS
-//////////////////////////////////////////////////////////////////
-
-struct HotkeyPrompt
-{
-    string instruction; // "Build Structure"
-    text targetTxt; // "Factory"
-    string icon; // "Assets\\Textures\\btn-building-terran-factory.dds"
-    string targetUnitId;
-};
-
-//////////////////////////////////////////////////////////////////
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
-// Worker Unit Ids
 static string[3] WORKER_UNIT_IDS;
-
-// Build Ability Ids
 static string[3] BUILD_ABILITY_IDS;
 
-// Gas Structure Ids
 static string[3] GAS_STRUCTURE_IDS;
 static string GAS_UNIT_ID = "VespeneGeyser";
 static string PYLON_UNIT_ID = "Pylon";
 
 static string[3] BUILD_HOTKEY_PROMPT_INSTRUCTIONS;
 
-// Hotkey Prompts
-static HotkeyPrompt[3][30] BUILD_HOTKEY_PROMPTS;
-
-// gv_somepoint = PointFromName("hotkeytraining_structure_location");
+static hk__prompt[3][30] BUILD_HOTKEY_PROMPTS;
 
 //////////////////////////////////////////////////////////////////
 // VARIABLES
@@ -48,7 +29,16 @@ static unit pylonPropUnit;
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
 
-void PromptUserForBuildStructureHotkey(int raceIdx) {
+// static funciton declarations
+static void initBuildHotkeyPrompts ();
+static void promptUserForBuildStructureHotkey(int raceIdx);
+
+
+void hk_st__begin(int raceIdx) {
+    promptUserForBuildStructureHotkey(raceIdx);
+}
+
+void promptUserForBuildStructureHotkey(int raceIdx) {
     string workerUnitId = WORKER_UNIT_IDS[raceIdx];
     string buildAbilityId = BUILD_ABILITY_IDS[raceIdx];
 
@@ -61,11 +51,16 @@ void PromptUserForBuildStructureHotkey(int raceIdx) {
     activeHotkeyPromptRaceIdx = raceIdx;
     activeHotkeyPromptCmdIdx = cmdIdx;
 
+    // tweak range of build abilities
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[TERRAN_RACE], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[ZERG_RACE], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[PROTOSS_RACE], "Range", 1, "1000");
+
     // dialog
     if (activeHotkeyPromptDialog != 0) {
         DialogDestroy(activeHotkeyPromptDialog);
     }
-    activeHotkeyPromptDialog = CreateHotkeyPromptDialog(
+    activeHotkeyPromptDialog = dg__createHotkeyPromptDialog(
         BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].instruction,
         BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].targetTxt,
         BUILD_HOTKEY_PROMPTS[raceIdx][cmdIdx].icon
@@ -118,7 +113,51 @@ void PromptUserForBuildStructureHotkey(int raceIdx) {
     // PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 200.0); // not working?
 }
 
-static void InitBuildHotkeyPrompts() {
+void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
+    string unitType = UnitGetType(triggeringUnit);
+
+    if (triggeringAbil != BUILD_ABILITY_IDS[activeHotkeyPromptRaceIdx]) {
+        return; // unit was probably created by trigger or some other way
+    }
+
+    if (unitType == BUILD_HOTKEY_PROMPTS[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId) {
+        dbg("yay");
+        promptUserForBuildStructureHotkey(activeHotkeyPromptRaceIdx);
+    }
+    else {
+        dbg("nay");
+    }
+
+    // Stop building the structure immediately
+    UnitIssueOrder(triggeringUnit, Order(AbilityCommand("BuildInProgress", 0)), c_orderQueueReplace);
+}
+
+//////////////////////////////////////////////////////////////////
+// Initialization
+//////////////////////////////////////////////////////////////////
+
+void hk_st__init() {
+    WORKER_UNIT_IDS[0] = "SCV";
+    WORKER_UNIT_IDS[1] = "Drone";
+    WORKER_UNIT_IDS[2] = "Probe";
+
+    BUILD_ABILITY_IDS[0] = "TerranBuild";
+    BUILD_ABILITY_IDS[1] = "ZergBuild";
+    BUILD_ABILITY_IDS[2] = "ProtossBuild";
+
+    GAS_STRUCTURE_IDS[0] = "Refinery";
+    GAS_STRUCTURE_IDS[1] = "Extractor";
+    GAS_STRUCTURE_IDS[2] = "Assimilator";
+
+    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[0] = "Build Structure";
+    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[1] = "Mutate Into Structure";
+    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[2] = "Warp In Structure";
+
+    // Hotkey Prompts
+    initBuildHotkeyPrompts();
+}
+
+static void initBuildHotkeyPrompts () {
     int raceIdx;
     int cardLayoutsCount; // the number of card layouts on the worker unit
     int cardLayoutsIdx;
@@ -132,7 +171,7 @@ static void InitBuildHotkeyPrompts() {
     text unitNameTxt;
     string buttonId;
     string iconStr;
-    HotkeyPrompt hotkeyPrompt;
+    hk__prompt hotkeyPrompt;
 
     string fieldPath;
 
@@ -166,110 +205,4 @@ static void InitBuildHotkeyPrompts() {
             }
         }
     }
-}
-
-//////////////////////////////////////////////////////////////////
-// Trigger Handlers
-//////////////////////////////////////////////////////////////////
-
-void hotkeys_onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
-    string unitType = UnitGetType(triggeringUnit);
-
-    if (triggeringAbil != BUILD_ABILITY_IDS[activeHotkeyPromptRaceIdx]) {
-        return; // unit was probably created by trigger or some other way
-    }
-
-    if (unitType == BUILD_HOTKEY_PROMPTS[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId) {
-        dbg("yay");
-        PromptUserForBuildStructureHotkey(activeHotkeyPromptRaceIdx);
-    }
-    else {
-        dbg("nay");
-    }
-
-    // Stop building the structure immediately
-    UnitIssueOrder(triggeringUnit, Order(AbilityCommand("BuildInProgress", 0)), c_orderQueueReplace);
-}
-
-void hotkeys_init() {
-    // Worker Unit Ids
-    WORKER_UNIT_IDS[0] = "SCV";
-    WORKER_UNIT_IDS[1] = "Drone";
-    WORKER_UNIT_IDS[2] = "Probe";
-
-    // Build Ability Ids
-    BUILD_ABILITY_IDS[0] = "TerranBuild";
-    BUILD_ABILITY_IDS[1] = "ZergBuild";
-    BUILD_ABILITY_IDS[2] = "ProtossBuild";
-
-    // Gas Structure Ids
-    GAS_STRUCTURE_IDS[0] = "Refinery";
-    GAS_STRUCTURE_IDS[1] = "Extractor";
-    GAS_STRUCTURE_IDS[2] = "Assimilator";
-
-    // Build Hotkey Prompt Instructions
-    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[0] = "Build Structure";
-    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[1] = "Mutate Into Structure";
-    BUILD_HOTKEY_PROMPT_INSTRUCTIONS[2] = "Warp In Structure";
-
-    // Tweak range of build abilities
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[TERRAN_RACE], "Range", 1, "1000");
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[ZERG_RACE], "Range", 1, "1000");
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[PROTOSS_RACE], "Range", 1, "1000");
-
-    // Hotkey Prompts
-    InitBuildHotkeyPrompts();
-
-
-}
-
-void DoExploring() {
-
-    //  <CUnit id="Extractor">
-    //      <BuiltOn index="0" removed="1"/>checkout <CUnit><BuiltOn/></CUnit>
-
-    //  <CUnit id="FleetBeacon">
-    //      <BehaviorArray index="0" removed="1"/>
-
-    string scope;
-    bool isArray;
-    string fieldType;
-    int fieldTypeCategory;
-    int fieldValueCount;
-    int fieldValueIdx;
-    string fieldValue;
-
-
-    scope = CatalogEntryScope(c_gameCatalogUnit, "Refinery");
-    dbg(scope);
-
-    isArray = CatalogFieldIsArray(scope, "BuiltOn");
-    dbg(libNtve_gf_ConvertBooleanToString(isArray));
-
-    fieldType = CatalogFieldType(scope, "BuiltOn");
-    dbg(fieldType);
-
-    fieldTypeCategory = CatalogFieldTypeCategory(scope, "BuiltOn");
-    dbg(IntToString(fieldTypeCategory));
-
-    fieldValueCount = CatalogFieldValueCount(c_gameCatalogUnit, "Refinery", "BuiltOn", 1);
-    dbg(IntToString(fieldValueCount));
-
-    for(fieldValueIdx = 0; fieldValueIdx < fieldValueCount; fieldValueIdx += 1) {
-        fieldValue = CatalogFieldValueGet(c_gameCatalogUnit, "Refinery", "BuiltOn[" + IntToString(fieldValueIdx) + "]", 1);
-        dbg(IntToString(fieldValueIdx));
-        dbg(fieldValue);
-
-        CatalogFieldValueSet(c_gameCatalogUnit, "Refinery", "BuiltOn[" + IntToString(fieldValueIdx) + "]", 1, "");
-    }
-
-
-
-}
-
-void Development() {
-
-
-
-    // DoExploring();
 }

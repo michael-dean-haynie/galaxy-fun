@@ -1,48 +1,34 @@
-const int MAX_PLAYERS = 7;
-static const string NAMESPACE = "ThisVariableCanOnlyBeAccessedIn main.galaxy";
-
 const int TERRAN_RACE = 0;
 const int ZERG_RACE = 1;
 const int PROTOSS_RACE = 2;
 
-static void noopfunc() {
-    // This function can not be accessed outside this file.
-}
-void anothernoop() {
-    // This function can
-}
+// TODO: remove old
+// include "scripts/util"
+// include "scripts/dialogs"
+// include "scripts/hotkeys"
+// include "scripts/triggers"
+// include "scripts/screen-buttons"
 
-include "scripts/util"
-include "scripts/dialogs"
-include "scripts/hotkeys"
-include "scripts/triggers"
-include "scripts/screen-buttons"
+// module headers
+include "scripts/util/util_h"
+include "scripts/triggers/triggers_h"
+include "scripts/dialogs/dialogs_h"
+include "scripts/screenbuttons/screenbuttons_h"
+include "scripts/hotkeys/structures/hotkeys_structures_h"
+
+// module implementations
+include "scripts/util/util"
+include "scripts/triggers/triggers"
+include "scripts/dialogs/dialogs"
+include "scripts/screenbuttons/screenbuttons"
+include "scripts/hotkeys/structures/hotkeys_structures"
 
 
 void main() {
-    // This function is invoked from MapScript.galaxy when the map
-    // first loads.
-
-    // We never touch MapScript.galaxy from vscode, because
-    // sc2edit will overwrite it any time you hit Save in sc2edit.
-
-    // You are free to add, delete, rename, and otherwise do whatever
-    // you want inside the scripts/ folder before tabbing back to
-    // sc2edit, hitting c-F12 to Compile and c-F9 to run.
-
-    // noopfunc();
-    // initUtil();
-    // initCmd();
-
-    // registerChatCommand("lol", "Prints 'lol'.", false, true, cmdLol);
-
-    // initialize scripts
-    initUtil(); // from scripts/util.galaxy
-    hotkeys_init();
-    triggers_init();
-    screenButtons_init();
-
-    Development(); // fron hotkeys.galaxy
-
-    dbg("main() has run");
+    // initialization
+    ut__init(); // util/util.galaxy
+    tr__init(); // triggers/triggers.galaxy
+    dg__init(); // dialogs/dialogs.galaxy
+    sb__init(); // screenbuttons/screenbuttons.galaxy
+    hk_st__init(); // hotkeys/structures/hotkeys_structures.galaxy
 }
