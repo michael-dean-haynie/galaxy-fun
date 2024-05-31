@@ -88,25 +88,13 @@ void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool atte
 //////////////////////////////////////////////////////////////////
 
 void bk__init() {
-    ctgBank = BankLoad("cadenzasTrainingGround", 1);
-    // BankReload(ctgBank);
-    // BankWait(ctgBank);
-    BankSave(ctgBank);
-
-    // initialize sections
-    initHotkeysStructuresSections();
-    BankSave(ctgBank);
-
-    // progress sections (move "current" data (from last game) to "most recent" data)
-    progressHotkeysStructuresSections();
-    BankSave(ctgBank);
-}
-
-void initHotkeysStructuresSections() {
     int raceIdx;
     int cmdIdx;
     string sectionName;
     string structureId;
+
+    dbg("BankExists(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
+    ctgBank = BankLoad("cadenzastrainingground", 1);
 
     hk_st__init(); // make sure constants have been initialized
 
@@ -116,56 +104,32 @@ void initHotkeysStructuresSections() {
                 structureId = hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId;
                 sectionName = "hotkeys.structures." + bk__raceId(raceIdx) + "." + structureId;
 
-                dbg(sectionName + " exists: " + libNtve_gf_ConvertBooleanToString(BankSectionExists(ctgBank, sectionName)));
-                dbg(sectionName + " keyCount: " + IntToString(BankKeyCount(ctgBank, sectionName)));
-
-                if(!BankSectionExists(ctgBank, sectionName)) {
-                    dbg("initializing " + sectionName);
-                    BankSectionCreate(ctgBank, sectionName);
+                // initialize if needed
+                if (!BankKeyExists(ctgBank , sectionName, ALL_TIME_ATTEMPTS)) {
                     BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS, 0);
                     BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_FAILURES, 0);
                     BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_ATTEMPTS, 0);
                     BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_FAILURES, 0);
                     BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS, 0);
                     BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES, 0);
+                    BankSave(ctgBank);
                 }
+                else {
+                    // move "current" data from last session to "most recent session", and start fresh for this session
+                    if (BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS) > 0) {
+                        BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_ATTEMPTS, BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS));
+                        BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_FAILURES, BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES));
+                        BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS, 0);
+                        BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES, 0);
+                        BankSave(ctgBank);
+                    }
+                }
+
+                BankSave(ctgBank);
             }
         }
     }
 
-}
-
-void progressHotkeysStructuresSections() {
-    int raceIdx;
-    int cmdIdx;
-    string sectionName;
-    string structureId;
-
-    int currentSessionAttempts;
-    int currentSessionFailures;
-
-    hk_st__init(); // make sure constants have been initialized
-
-    for(raceIdx = 0; raceIdx < RACE_COUNT; raceIdx += 1) {
-        for(cmdIdx = 0; cmdIdx < hk_st__buildHotkeyPromptCmdCount; cmdIdx += 1) {
-            if (hk_st__buildHotkeyPromptHasValue(raceIdx, cmdIdx)) {
-                structureId = hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId;
-                sectionName = "hotkeys.structures." + bk__raceId(raceIdx) + "." + structureId;
-
-                currentSessionAttempts = BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS);
-                currentSessionFailures = BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES);
-
-                if (currentSessionAttempts > 0) {
-                    // move last session data
-                    BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_ATTEMPTS, currentSessionAttempts);
-                    BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_FAILURES, currentSessionFailures);
-
-                    // start fresh for this session
-                    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS, 0);
-                    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_FAILURES, 0);
-                }
-            }
-        }
-    }
+    BankSave(ctgBank);
 
 }

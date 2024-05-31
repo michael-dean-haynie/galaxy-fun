@@ -6,6 +6,18 @@
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
 
+void mapInit_Init () {
+    tr__mapInit = TriggerCreate("tr__mapInit_Func");
+    TriggerAddEventMapInit(tr__mapInit);
+}
+
+bool tr__mapInit_Func (bool testConds, bool runActions) {
+    bk__init();
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
 void unitIsCreated_Init () {
     tr__unitIsCreated = TriggerCreate("tr__unitIsCreated_Func");
     TriggerAddEventUnitCreated(tr__unitIsCreated, null, null, null);
@@ -73,6 +85,8 @@ bool tr__protossSB_Func (bool testConds, bool runActions) {
 //////////////////////////////////////////////////////////////////
 
 void tr__init() {
+    mapInit_Init();
+
     unitIsCreated_Init();
 
     // Screen Button Triggers

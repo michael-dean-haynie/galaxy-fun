@@ -24,11 +24,13 @@ include "scripts/hotkeys/structures/hotkeys_structures"
 
 void main() {
     // initialization
+    dbg("starting main()");
     ut__init();     // util/util.galaxy
     ct__init();     // catalog/catalog.galaxy
-    bk__init();     // bank/bank.galaxy
+    // bk__init();     // bank/bank.galaxy - triggered by mapInit trigger
     tr__init();     // triggers/triggers.galaxy
     dg__init();     // dialogs/dialogs.galaxy
     sb__init();     // screenbuttons/screenbuttons.galaxy
     hk_st__init();  // hotkeys/structures/hotkeys_structures.galaxy
+    dbg("finishing main()");
 }

@@ -6,6 +6,8 @@
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
+trigger tr__mapInit;
+
 trigger tr__unitIsCreated;
 
 // Screen Button Triggers

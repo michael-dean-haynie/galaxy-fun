@@ -15,14 +15,6 @@ void InitLibs () {
 }
 
 //--------------------------------------------------------------------------------------------------
-// Global Variables
-//--------------------------------------------------------------------------------------------------
-point gv_somepoint;
-
-void InitGlobals () {
-}
-
-//--------------------------------------------------------------------------------------------------
 // Trigger Variables
 //--------------------------------------------------------------------------------------------------
 trigger gt_initialization;
@@ -83,10 +75,6 @@ bool gt_codegeneration_Func (bool testConds, bool runActions) {
         if (!((EventUnitAbility() == AbilityCommand("TerranBuild", 1)))) {
             return false;
         }
-
-        if (!((EventUnitAbilityStage() == c_abilBuildStageApproach))) {
-            return false;
-        }
     }
 
     // Actions
@@ -94,7 +82,6 @@ bool gt_codegeneration_Func (bool testConds, bool runActions) {
         return true;
     }
 
-    gv_somepoint = PointFromName("hotkeytraining_structure_location");
     libNtve_gf_DisplayScreenButton(7, StringExternal("Param/Value/FBBE1A32"), 250, 60, c_anchorBottomLeft, 20, 380, gt_codegeneration);
     PlayerSetRace(1, "Terr");
     return true;
@@ -121,7 +108,6 @@ void InitTriggers () {
 //--------------------------------------------------------------------------------------------------
 void InitMap () {
     InitLibs();
-    InitGlobals();
     InitCustomScript();
     InitTriggers();
 }
