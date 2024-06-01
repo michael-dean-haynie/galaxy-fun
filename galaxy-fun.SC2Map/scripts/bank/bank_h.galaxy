@@ -31,3 +31,4 @@ void bk__startHotkeysStructuresSession(int raceInt);
 void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool attemptWasSuccessful, fixed delay);
 
 int bk__getValueAsInt(string section, string key);
+fixed bk__getValueAsFixed(string section, string key);
