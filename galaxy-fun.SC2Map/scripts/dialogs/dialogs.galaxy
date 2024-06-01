@@ -38,6 +38,12 @@ static const fixed LABEL_WIDTH_MULT = (140.0 / 10.0) / 32.0; // FontHeight: 32, 
 //     return result;
 // }
 
+// static function declarations
+static void populateCellWithIconAndText (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, string iconSrc, text cellText);
+static void populateCellWithText (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, text cellText);
+static text formatAccuracy(int successes, int attempts, int accuracyScore);
+static text formatDelay(fixed delay, int attmepts);
+
 int dg__createHotkeyPromptDialog(string headingStr, text structureTxt, string iconStr)
 {
     int dialogWidth = 500;
@@ -96,6 +102,223 @@ int dg__createHotkeyPromptDialog(string headingStr, text structureTxt, string ic
 
     return DialogLastCreated();
 }
+
+int dg__createScoresDialog(int race) {
+    int dialog;
+    int cmdIdx;
+
+    string headerLineIcon;
+    int headerLineIconWidth;
+    int headerLineIconHeight;
+
+    text structureText;
+    string structureIconSrc;
+    string structureId;
+
+    int dialogWidth = 460;
+    int dialogHeight = 875;
+    int dialogBaseLeftPadding = 32;
+    int dialogBaseTopPadding = 30;
+
+    int tableWidth = dialogWidth - (dialogBaseLeftPadding * 2);
+    int delayColumnWidth = FixedToInt(Round(tableWidth * 0.16));
+    int accuracyColumnWidth = FixedToInt(Round(tableWidth * 0.42));
+    int structureColumnWidth = tableWidth - delayColumnWidth - accuracyColumnWidth;
+
+    int headerCellHeight = 16;
+    int rowCellHeight = 16;
+
+    int runningOffsetX = dialogBaseLeftPadding;
+    int runningOffsetY = dialogBaseTopPadding;
+
+    string blankIconSrc = "Assets\\Textures\\btn-blank.dds";
+
+    int attempts;
+    int failures;
+    int successes;
+    int accuracyScore;
+    fixed delay;
+
+    DialogCreate(dialogWidth, dialogHeight, c_anchorTopRight, 0, 0, true);
+    DialogSetVisible(DialogLastCreated(), PlayerGroupAll(), true);
+    dialog = DialogLastCreated();
+
+    hk_st__init(); // make sure constants have been initialized
+    
+    // headerLineIcon = "Assets\Textures\sc2_ui_glues_scorescreen_graphline_01.dds"; // 12x12
+    // headerLineIcon = "Assets\Textures\line_white3.dds"; // 64x64
+    // headerLineIcon = "Assets\Textures\line_blue.dds"; // 64x64
+    // headerLineIcon = "Assets\Textures\line_blue1.dds"; // 64x128
+    // headerLineIcon = "Assets\\Textures\\ui_techtree_line_extend.dds"; // 14x14
+    
+    // Assets\Textures\ui_objectives_checkbox_failed.dds // 40x40
+    // Assets\Textures\ui_objectives_checkbox_active.dds // 40x40
+    // Assets\Textures\ui_battlenet_glue_checkboxmark.dds // 24x24
+    // EditorData\Images\Publishing\Failure.tga // 32x32
+    // EditorData\Images\Publishing\Complete.tga // 32x32
+
+    // "Assets\\Textures\\ui_battlenet_glue_checkboxmark.dds" // 30x30
+    // "Assets\Textures\icon-time-protoss.dds" // 64x64
+    // "Assets\Textures\btn-ability-terran-snipe-color.dds" // 76x76
+
+    // "Assets\Textures\btn-blank.dds" // 76x76
+
+    // column headers
+
+    // column 1 header cell (Structure)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, structureColumnWidth, headerCellHeight, null, StringToText("Structure"));
+    runningOffsetX += structureColumnWidth;
+
+    // column 2 header cell (Accuracy)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, headerCellHeight, "Assets\\Textures\\btn-ability-terran-snipe-color.dds", StringToText("Accuracy"));
+    runningOffsetX += accuracyColumnWidth;
+
+    // column 3 header cell (Delay)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, headerCellHeight, "Assets\\Textures\\icon-time-protoss.dds", StringToText("Delay"));
+    runningOffsetX += delayColumnWidth;
+
+    runningOffsetX = dialogBaseLeftPadding;
+    runningOffsetY += headerCellHeight;
+
+    // header line
+    headerLineIcon = "Assets\\Textures\\sc2_ui_glues_scorescreen_graphline_01.dds"; // 12x12
+    headerLineIconWidth = tableWidth;
+    headerLineIconHeight = 6;
+    libNtve_gf_CreateDialogItemImage(DialogLastCreated(), headerLineIconWidth, headerLineIconHeight, c_anchorTopLeft, runningOffsetX, runningOffsetY, StringToText(""), headerLineIcon, c_triggerImageTypeNormal, true, Color(100,100,100), c_triggerBlendModeNormal);
+    DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);
+    runningOffsetY += headerCellHeight;
+
+    // rows
+    for(cmdIdx = 0; cmdIdx < hk_st__buildHotkeyPromptCmdCount; cmdIdx += 1) {
+        if (hk_st__buildHotkeyPromptHasValue(race, cmdIdx)) {
+            structureIconSrc = hk_st__buildHotkeyPrompts[race][cmdIdx].icon;
+            structureText = hk_st__buildHotkeyPrompts[race][cmdIdx].targetTxt;
+            structureId = hk_st__buildHotkeyPrompts[race][cmdIdx].targetUnitId;
+
+            // Structure column
+            populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, structureColumnWidth, rowCellHeight, structureIconSrc, structureText);
+            runningOffsetX += structureColumnWidth;
+
+            // Accuracy column
+            attempts = bk__getValueAsInt(bk__hotkeysStructuresPrefix + structureId, bk__currentSessionAttempts);
+            failures = bk__getValueAsInt(bk__hotkeysStructuresPrefix + structureId, bk__currentSessionFailures);
+            successes = attempts - failures;
+            accuracyScore = 100;
+            if (attempts > 0) {
+                accuracyScore = FixedToInt(Round((IntToFixed(successes) / IntToFixed(attempts)) * 100));
+            }
+
+            // full-width example: "100% (999999/999999)"
+            populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(successes, attempts, accuracyScore));
+            runningOffsetX += accuracyColumnWidth;
+
+            // Delay column
+            delay = bk__getValueAsFixed(bk__hotkeysStructuresPrefix + structureId, bk__currentSessionDelay);
+
+            // full-width example: "99.99s"
+            // populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, StringToText("99.99s"));
+            populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(delay, successes));
+            runningOffsetX += delayColumnWidth;
+
+            runningOffsetY += rowCellHeight;
+            runningOffsetX = dialogBaseLeftPadding;
+        }
+    }
+
+    return DialogLastCreated();
+}
+
+static void populateCellWithIconAndText (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, string iconSrc, text cellText) {
+    int iconWidth = cellHeight;
+    int iconHeight = cellHeight;
+
+    int textWidth = cellWidth - iconWidth;
+    int textHeight = cellHeight;
+
+    int runningOffsetX = xOfs;
+    int runningOffsetY = yOfs;
+
+    int paddingBetweenIconAndText = 3;
+
+    // icon
+    if (iconSrc != null) {
+        libNtve_gf_CreateDialogItemImage(dialog, iconWidth, iconHeight, c_anchorTopLeft, runningOffsetX, runningOffsetY, StringToText(""), iconSrc, c_triggerImageTypeNormal, false, Color(100,100,100), c_triggerBlendModeNormal);
+        DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);
+    }
+    runningOffsetX += iconWidth + paddingBetweenIconAndText;
+
+    // cell text
+    libNtve_gf_CreateDialogItemLabel(DialogLastCreated(), textWidth, textHeight, c_anchorTopLeft, runningOffsetX, runningOffsetY, cellText, ColorWithAlpha(0,0,0,0), false, 0.0);
+    libNtve_gf_SetDialogItemStyle(DialogControlLastCreated(), "StandardText12", PlayerGroupAll());
+    DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);
+}
+
+static void populateCellWithText (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, text cellText) {
+    int iconWidth = cellHeight;
+    int iconHeight = cellHeight;
+
+    int textWidth = cellWidth - iconWidth;
+    int textHeight = cellHeight;
+
+    int runningOffsetX = xOfs;
+    int runningOffsetY = yOfs;
+
+    // cell text
+    libNtve_gf_CreateDialogItemLabel(DialogLastCreated(), textWidth, textHeight, c_anchorTopLeft, runningOffsetX, runningOffsetY, cellText, ColorWithAlpha(0,0,0,0), false, 0.0);
+    libNtve_gf_SetDialogItemStyle(DialogControlLastCreated(), "StandardText12", PlayerGroupAll());
+    DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);
+}
+
+static text formatAccuracy(int successes, int attempts, int accuracyScore) {
+    string successesStr = IntToString(successes);
+    int successesStrLn = StringLength(successesStr);
+
+    string attemptsStr = IntToString(attempts);
+    int attemptsStrLn = StringLength(attemptsStr);
+
+    string accuracyScoreStr;
+    int accuracyScoreStrLn;
+
+
+    int i;
+    
+    for (i = successesStrLn; i < 4; i += 1) {
+        successesStr = "_" + successesStr;
+    }
+
+    for (i = attemptsStrLn; i < 4; i += 1) {
+        attemptsStr = attemptsStr + "_";
+    }
+
+    if (attempts > 0)  {
+        accuracyScoreStr = IntToString(accuracyScore);
+    }
+    else {
+        accuracyScoreStr = "";
+    }
+    accuracyScoreStrLn = StringLength(accuracyScoreStr);
+
+    for (i = accuracyScoreStrLn; i < 3; i += 1) {
+        accuracyScoreStr = "_" + accuracyScoreStr;
+    }
+
+    return StringToText(accuracyScoreStr + "% ("  + successesStr + "/" + attemptsStr + ")");
+}
+
+static text formatDelay(fixed delay, int successes) {
+    string delayStr = FixedToString(delay, 2);
+
+    if (successes < 1) {
+        return StringToText("-----");
+    }
+
+    if (StringFind(delayStr, ".", false) < 3) {
+        delayStr = "_" + delayStr;
+    }
+
+    return StringToText(delayStr);
+}
+
 
 //////////////////////////////////////////////////////////////////
 // Initialization

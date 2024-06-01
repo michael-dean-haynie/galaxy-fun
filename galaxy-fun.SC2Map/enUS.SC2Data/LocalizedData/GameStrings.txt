@@ -1,4 +1,5 @@
-﻿DocInfo/DescLong=Completely devoid of any description whatsoever.
+﻿DOCSTR_0000=Insert Text
+DocInfo/DescLong=Completely devoid of any description whatsoever.
 DocInfo/DescShort=Any
 DocInfo/Name=Just Another StarCraft II Map
 MapInfo/Player00/Name=Neutral

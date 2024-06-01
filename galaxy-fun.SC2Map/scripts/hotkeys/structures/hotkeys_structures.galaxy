@@ -20,6 +20,8 @@ static bool initialized = false;
 static int activeHotkeyPromptRaceIdx;
 static int activeHotkeyPromptCmdIdx;
 static int activeHotkeyPromptDialog;
+static timer activeHotkeyPromptTimer;
+static int activeScoresDialog;
 
 static unit activeHotkeyPromptUnit;
 static unit gasPropUnit;
@@ -35,6 +37,32 @@ static void promptUserForBuildStructureHotkey(int raceIdx);
 
 
 void hk_st__begin(int raceIdx) {
+    PlayerSetRace(1, ct__raceId(raceIdx));
+
+    // start fresh with bank data
+    bk__startHotkeysStructuresSession(raceIdx);
+
+    // tweak range of build abilities
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[TERRAN], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[ZERG], "Range", 1, "1000");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[PROTOSS], "Range", 1, "1000");
+
+    // Remove Techtree Requirements / set resources / supply
+    TechTreeRequirementsEnable(1, false);
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 999999);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
+    // PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 200.0); // not working?
+
+    // UISetResourceVisible(PlayerGroupAll(), c_resourceTypeMinerals, false);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
+
+    // scores dialog
+    if (activeScoresDialog != 0) {
+        DialogDestroy(activeScoresDialog);
+    }
+    activeScoresDialog = dg__createScoresDialog(raceIdx);
+
     promptUserForBuildStructureHotkey(raceIdx);
 }
 
@@ -51,11 +79,6 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
     activeHotkeyPromptRaceIdx = raceIdx;
     activeHotkeyPromptCmdIdx = cmdIdx;
 
-    // tweak range of build abilities
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[TERRAN], "Range", 1, "1000");
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[ZERG], "Range", 1, "1000");
-    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[PROTOSS], "Range", 1, "1000");
-
     // dialog
     if (activeHotkeyPromptDialog != 0) {
         DialogDestroy(activeHotkeyPromptDialog);
@@ -65,6 +88,10 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
         hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetTxt,
         hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].icon
     );
+
+    // track response time
+    activeHotkeyPromptTimer = TimerCreate();
+    TimerStart(activeHotkeyPromptTimer, 9999.0, false, 1);
 
     // worker
     if (activeHotkeyPromptUnit != null && UnitGetType(activeHotkeyPromptUnit) != WORKER_UNIT_IDS[raceIdx]) {
@@ -106,11 +133,6 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
         CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
     }
 
-    // Remove Techtree Requirements / set resources / supply
-    TechTreeRequirementsEnable(1, false);
-    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 999999);
-    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
-    // PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 200.0); // not working?
 }
 
 void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
@@ -121,18 +143,24 @@ void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
         return; // unit was probably created by trigger or some other way
     }
 
+    // success
     if (unitType == hk_st__buildHotkeyPrompts[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId) {
-        dbg("yay");
-        bk__saveHotkeysStructuresAttempt(activeHotkeyPromptRaceIdx, structureId, true);
+        bk__saveHotkeysStructuresAttempt(activeHotkeyPromptRaceIdx, structureId, true, TimerGetElapsed(activeHotkeyPromptTimer));
         promptUserForBuildStructureHotkey(activeHotkeyPromptRaceIdx);
     }
+    // failure
     else {
-        dbg("nay");
-        bk__saveHotkeysStructuresAttempt(activeHotkeyPromptRaceIdx, structureId, false);
+        bk__saveHotkeysStructuresAttempt(activeHotkeyPromptRaceIdx, structureId, false, 0.0);
     }
 
     // Stop building the structure immediately
     UnitIssueOrder(triggeringUnit, Order(AbilityCommand("BuildInProgress", 0)), c_orderQueueReplace);
+
+    // scores dialog
+    if (activeScoresDialog != 0) {
+        DialogDestroy(activeScoresDialog);
+    }
+    activeScoresDialog = dg__createScoresDialog(activeHotkeyPromptRaceIdx);
 }
 
 bool hk_st__buildHotkeyPromptHasValue(int raceIdx, int cmdIdx) {

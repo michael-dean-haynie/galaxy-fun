@@ -82,6 +82,9 @@ bool gt_codegeneration_Func (bool testConds, bool runActions) {
         return true;
     }
 
+    UISetResourceVisible(PlayerGroupAll(), c_resourceTypeMinerals, false);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
     libNtve_gf_DisplayScreenButton(7, StringExternal("Param/Value/FBBE1A32"), 250, 60, c_anchorBottomLeft, 20, 380, gt_codegeneration);
     PlayerSetRace(1, "Terr");
     return true;

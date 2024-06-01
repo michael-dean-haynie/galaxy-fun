@@ -8,13 +8,6 @@
 
 static const string BANK_NAME = "cadenzasTrainingGround";
 
-static const string ALL_TIME_ATTEMPTS = "allTimeAttempts";
-static const string ALL_TIME_FAILURES = "allTimeFailures";
-static const string MOST_RECENT_SESSION_ATTEMPTS = "mostRecentSessionAttempts";
-static const string MOST_RECENT_SESSION_FAILURES = "mostRecentSessionFailures";
-static const string CURRENT_SESSION_ATTEMPTS = "currentSessionAttempts";
-static const string CURRENT_SESSION_FAILURES = "currentSessionFailures";
-
 //////////////////////////////////////////////////////////////////
 // VARIABLES
 //////////////////////////////////////////////////////////////////
@@ -55,32 +48,89 @@ int bk__raceInt(string raceId) {
     return -1;
 }
 
-void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool attemptWasSuccessful) {
-    string sectionName = "hotkeys.structures." + bk__raceId(raceInt) + "." + structureId;
-    int existingAllTimeAttempts;
-    int existingAllTimeFailures;
-    int existingCurrentSessionAttempts;
-    int existingCurrentSessionFailures;
+void bk__startHotkeysStructuresSession(int raceInt) {
+    int cmdIdx;
+    string sectionName;
+    string structureId;
 
-    existingAllTimeAttempts = BankValueGetAsInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS);
-    existingAllTimeFailures = BankValueGetAsInt(ctgBank, sectionName, ALL_TIME_FAILURES);
-    existingCurrentSessionAttempts = BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS);
-    existingCurrentSessionFailures = BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES);
+    ctgBank = BankLoad("cadenzastrainingground", 1);
 
-    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS, existingAllTimeAttempts + 1);
-    BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS, existingCurrentSessionAttempts + 1);
+    hk_st__init(); // make sure constants have been initialized
 
-    if (!attemptWasSuccessful) {
-        BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_FAILURES, existingAllTimeFailures + 1);
-        BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES, existingCurrentSessionFailures + 1);
+    for(cmdIdx = 0; cmdIdx < hk_st__buildHotkeyPromptCmdCount; cmdIdx += 1) {
+        if (hk_st__buildHotkeyPromptHasValue(raceInt, cmdIdx)) {
+            structureId = hk_st__buildHotkeyPrompts[raceInt][cmdIdx].targetUnitId;
+            sectionName = "hotkeys.structures."  + structureId;
+
+            // move "current" data from last session to "most recent session", and start fresh for this session
+            if (BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts) > 0) {
+                BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionAttempts, BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts));
+                BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionFailures, BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionFailures));
+                BankValueSetFromFixed(ctgBank, sectionName, bk__mostRecentSessionDelay, BankValueGetAsFixed(ctgBank, sectionName, bk__currentSessionDelay));
+                BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionAttempts, 0);
+                BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionFailures, 0);
+                BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, 0.0);
+                BankSave(ctgBank);
+            }
+
+            BankSave(ctgBank);
+        }
     }
 
     BankSave(ctgBank);
+}
 
-    dbg(sectionName + "." + ALL_TIME_ATTEMPTS + ": " + IntToString(existingAllTimeAttempts) + " -> " + IntToString(BankValueGetAsInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS)));
-    dbg(sectionName + "." + ALL_TIME_FAILURES + ": " + IntToString(existingAllTimeFailures) + " -> " + IntToString(BankValueGetAsInt(ctgBank, sectionName, ALL_TIME_FAILURES)));
-    dbg(sectionName + "." + CURRENT_SESSION_ATTEMPTS + ": " + IntToString(existingCurrentSessionAttempts) + " -> " + IntToString(BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS)));
-    dbg(sectionName + "." + CURRENT_SESSION_FAILURES + ": " + IntToString(existingCurrentSessionFailures) + " -> " + IntToString(BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES)));
+void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool attemptWasSuccessful, fixed delay) {
+    string sectionName = "hotkeys.structures." + structureId;
+    int existingAllTimeAttempts;
+    int existingAllTimeFailures;
+    fixed existingAllTimeDelay;
+    int existingAllTimeSuccesses;
+    int existingCurrentSessionAttempts;
+    int existingCurrentSessionFailures;
+    fixed existingCurrentSessionDelay;
+    int existingCurrentSessionSuccesses;
+
+    fixed newAllTimeDelay;
+    fixed newCurrentSessionDelay;
+
+    existingAllTimeAttempts = BankValueGetAsInt(ctgBank, sectionName, bk__allTimeAttempts);
+    existingAllTimeFailures = BankValueGetAsInt(ctgBank, sectionName, bk__allTimeFailures);
+    existingAllTimeDelay = BankValueGetAsFixed(ctgBank, sectionName, bk__allTimeDelay);
+    existingAllTimeSuccesses = existingAllTimeAttempts - existingAllTimeFailures;
+
+    existingCurrentSessionAttempts = BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts);
+    existingCurrentSessionFailures = BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionFailures);
+    existingCurrentSessionDelay = BankValueGetAsFixed(ctgBank, sectionName, bk__currentSessionDelay);
+    existingCurrentSessionSuccesses = existingCurrentSessionAttempts - existingCurrentSessionFailures;
+
+    // update attempts
+    BankValueSetFromInt(ctgBank, sectionName, bk__allTimeAttempts, existingAllTimeAttempts + 1);
+    BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionAttempts, existingCurrentSessionAttempts + 1);
+
+    if (attemptWasSuccessful) {
+        // update delays
+        newAllTimeDelay = ((existingAllTimeSuccesses * existingAllTimeDelay) + delay) / (existingAllTimeAttempts + 1);
+        BankValueSetFromFixed(ctgBank, sectionName, bk__allTimeDelay, newAllTimeDelay);
+
+        newCurrentSessionDelay = ((existingCurrentSessionSuccesses * existingCurrentSessionDelay) + delay) / (existingCurrentSessionAttempts + 1);
+        BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, newCurrentSessionDelay);
+    }
+    else {
+        // update failures
+        BankValueSetFromInt(ctgBank, sectionName, bk__allTimeFailures, existingAllTimeFailures + 1);
+        BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionFailures, existingCurrentSessionFailures + 1);
+    }
+
+    BankSave(ctgBank);
+}
+
+int bk__getValueAsInt(string section, string key) {
+    return BankValueGetAsInt(ctgBank, section, key);
+}
+
+fixed bk__getValueAsFixed(string section, string key) {
+    return BankValueGetAsFixed(ctgBank, section, key);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -93,7 +143,6 @@ void bk__init() {
     string sectionName;
     string structureId;
 
-    dbg("BankExists(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
     ctgBank = BankLoad("cadenzastrainingground", 1);
 
     hk_st__init(); // make sure constants have been initialized
@@ -102,30 +151,21 @@ void bk__init() {
         for(cmdIdx = 0; cmdIdx < hk_st__buildHotkeyPromptCmdCount; cmdIdx += 1) {
             if (hk_st__buildHotkeyPromptHasValue(raceIdx, cmdIdx)) {
                 structureId = hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId;
-                sectionName = "hotkeys.structures." + bk__raceId(raceIdx) + "." + structureId;
+                sectionName = "hotkeys.structures." + structureId;
 
                 // initialize if needed
-                if (!BankKeyExists(ctgBank , sectionName, ALL_TIME_ATTEMPTS)) {
-                    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_ATTEMPTS, 0);
-                    BankValueSetFromInt(ctgBank, sectionName, ALL_TIME_FAILURES, 0);
-                    BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_ATTEMPTS, 0);
-                    BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_FAILURES, 0);
-                    BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS, 0);
-                    BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES, 0);
+                if (!BankKeyExists(ctgBank , sectionName, bk__allTimeAttempts)) {
+                    BankValueSetFromInt(ctgBank, sectionName, bk__allTimeAttempts, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, bk__allTimeFailures, 0);
+                    BankValueSetFromFixed(ctgBank, sectionName, bk__allTimeDelay, 0.0);
+                    BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionAttempts, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionFailures, 0);
+                    BankValueSetFromFixed(ctgBank, sectionName, bk__mostRecentSessionDelay, 0.0);
+                    BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionAttempts, 0);
+                    BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionFailures, 0);
+                    BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, 0.0);
                     BankSave(ctgBank);
                 }
-                else {
-                    // move "current" data from last session to "most recent session", and start fresh for this session
-                    if (BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS) > 0) {
-                        BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_ATTEMPTS, BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS));
-                        BankValueSetFromInt(ctgBank, sectionName, MOST_RECENT_SESSION_FAILURES, BankValueGetAsInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES));
-                        BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_ATTEMPTS, 0);
-                        BankValueSetFromInt(ctgBank, sectionName, CURRENT_SESSION_FAILURES, 0);
-                        BankSave(ctgBank);
-                    }
-                }
-
-                BankSave(ctgBank);
             }
         }
     }

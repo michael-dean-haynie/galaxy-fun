@@ -7,6 +7,7 @@ const int RACE_COUNT = 3;
 include "scripts/util/util_h"
 include "scripts/catalog/catalog_h"
 include "scripts/bank/bank_h"
+include "scripts/scores/scores_h"
 include "scripts/triggers/triggers_h"
 include "scripts/dialogs/dialogs_h"
 include "scripts/screenbuttons/screenbuttons_h"
@@ -16,6 +17,7 @@ include "scripts/hotkeys/structures/hotkeys_structures_h"
 include "scripts/util/util"
 include "scripts/catalog/catalog"
 include "scripts/bank/bank"
+include "scripts/scores/scores"
 include "scripts/triggers/triggers"
 include "scripts/dialogs/dialogs"
 include "scripts/screenbuttons/screenbuttons"
@@ -28,9 +30,14 @@ void main() {
     ut__init();     // util/util.galaxy
     ct__init();     // catalog/catalog.galaxy
     // bk__init();     // bank/bank.galaxy - triggered by mapInit trigger
+    sc__init();     // scores/scores.galaxy
     tr__init();     // triggers/triggers.galaxy
     dg__init();     // dialogs/dialogs.galaxy
     sb__init();     // screenbuttons/screenbuttons.galaxy
     hk_st__init();  // hotkeys/structures/hotkeys_structures.galaxy
+
+    ///////////////////////////////////////
+    hk_st__begin(TERRAN);
+
     dbg("finishing main()");
 }

@@ -12,11 +12,11 @@ int SBID_PROTOSS = 4;
 //////////////////////////////////////////////////////////////////
 
 void sb__init () {
-    libNtve_gf_DisplayScreenButton(SBID_SHOW_HIDE, StringToText("Show/Hide UI"), 250, 60, c_anchorBottomLeft, 20, 380, tr__showHideSB);
+    libNtve_gf_DisplayScreenButton(SBID_SHOW_HIDE, StringToText("Show/Hide UI"), 250, 60, c_anchorBottomLeft, 20, 380 + (60 * 0), tr__showHideSB);
 
-    libNtve_gf_DisplayScreenButton(SBID_PROTOSS, StringToText("Protoss"), 250, 60, c_anchorBottomRight, 20, 380, tr__protossSB);
-    libNtve_gf_DisplayScreenButton(SBID_ZERG, StringToText("Zerg"), 250, 60, c_anchorBottomRight, 20, 380 + (60 + 0), tr__zergSB);
-    libNtve_gf_DisplayScreenButton(SBID_TERRAN, StringToText("Terran"), 250, 60, c_anchorBottomRight, 20, 380 + ((60 + 0) * 2), tr__terranSB);
+    libNtve_gf_DisplayScreenButton(SBID_PROTOSS, StringToText("Protoss"), 250, 60, c_anchorBottomLeft, 20, 380 + (60 * 2), tr__protossSB);
+    libNtve_gf_DisplayScreenButton(SBID_ZERG, StringToText("Zerg"), 250, 60, c_anchorBottomLeft, 20, 380 + (60 * 3), tr__zergSB);
+    libNtve_gf_DisplayScreenButton(SBID_TERRAN, StringToText("Terran"), 250, 60, c_anchorBottomLeft, 20, 380 + (60 * 4), tr__terranSB);
 }
 
 // void ShowHideUI () {

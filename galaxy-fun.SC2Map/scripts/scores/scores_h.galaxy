@@ -10,7 +10,4 @@
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
 
-void dg__init();
-
-int dg__createHotkeyPromptDialog(string headingStr, text structureTxt, string iconStr);
-int dg__createScoresDialog(int race);
+void sc__init();

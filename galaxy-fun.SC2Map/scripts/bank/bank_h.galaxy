@@ -6,6 +6,18 @@
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
+const string bk__hotkeysStructuresPrefix = "hotkeys.structures.";
+
+const string bk__allTimeAttempts = "allTimeAttempts";
+const string bk__allTimeFailures = "allTimeFailures";
+const string bk__allTimeDelay = "allTimeDelay";
+const string bk__mostRecentSessionAttempts = "mostRecentSessionAttempts";
+const string bk__mostRecentSessionFailures = "mostRecentSessionFailures";
+const string bk__mostRecentSessionDelay = "mostRecentSessionDelay";
+const string bk__currentSessionAttempts = "currentSessionAttempts";
+const string bk__currentSessionFailures = "currentSessionFailures";
+const string bk__currentSessionDelay = "currentSessionDelay";
+
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
@@ -15,4 +27,7 @@ void bk__init();
 string bk__raceId(int raceInt);
 int bk__raceInt(string raceId);
 
-void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool attemptWasSuccessful);
+void bk__startHotkeysStructuresSession(int raceInt);
+void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool attemptWasSuccessful, fixed delay);
+
+int bk__getValueAsInt(string section, string key);
