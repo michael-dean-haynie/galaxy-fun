@@ -130,14 +130,11 @@ bool tr__dialogControlClicked_Func (bool testConds, bool runActions) {
         dg_hk__onClickBeginBtn();
     }
 
-    if (dialogCtrlId == dg_hk__latestBtn) {
-        dbg("latest");
-    }
-    if (dialogCtrlId == dg_hk__progressBtn) {
-        dbg("progress");
-    }
-    if (dialogCtrlId == dg_hk__allTimeBtn) {
-        dbg("all time");
+    if (dialogCtrlId == dg__scoreModeLatestBtn
+        || dialogCtrlId == dg__scoreModeProgressBtn
+        || dialogCtrlId == dg__scoreModeAllTimeBtn)
+    {
+        dg__onClickScoreModeBtn(dialogCtrlId);
     }
 
     return true;

@@ -125,7 +125,7 @@ bool gt_buttoncallback_Func (bool testConds, bool runActions) {
 void gt_buttoncallback_Init () {
     gt_buttoncallback = TriggerCreate("gt_buttoncallback_Func");
     TriggerEnable(gt_buttoncallback, false);
-    TriggerAddEventDialogControl(gt_buttoncallback, c_playerAny, c_invalidDialogControlId, c_triggerControlEventTypeClick);
+    TriggerAddEventDialogControl(gt_buttoncallback, c_playerAny, c_invalidDialogControlId, c_triggerControlEventTypeSelectionChanged);
 }
 
 //--------------------------------------------------------------------------------------------------

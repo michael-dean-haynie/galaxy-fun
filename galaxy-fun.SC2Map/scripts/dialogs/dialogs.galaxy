@@ -102,15 +102,33 @@ void dg__onClickTrainingAreaHotkeysBtn() {
     dg_hk__createSelectTrainingModeDialog();
 }
 
-void dg__onSelectionChangedRacePulldown(int control) {
-    int selectedIndex = DialogControlGetSelectedItem(control, 1);
-    dg__RaceSelection = selectedIndex - 1; // items are 1 indexed, races are 0 indexed
-
-    PlayerSetRace(1, ct__raceId(dg__RaceSelection));
+void dg__onClickScoreModeBtn(int control) {
+    if (control == dg__scoreModeLatestBtn) {
+        dg__scoreMode = dg__scoreModeLatest;
+    }
+    if (control == dg__scoreModeProgressBtn) {
+        dg__scoreMode = dg__scoreModeProgress;
+    }
+    if (control == dg__scoreModeAllTimeBtn) {
+        dg__scoreMode = dg__scoreModeAllTime;
+    }
 
     if (dg__trainingArea == dg__trainingAreaHotkeys) {
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures) {
-            hk_st__createScoresDialog(dg__RaceSelection);
+            dg_hk__createScoresDialog(dg__raceSelection);
+        }
+    }
+}
+
+void dg__onSelectionChangedRacePulldown(int control) {
+    int selectedIndex = DialogControlGetSelectedItem(control, 1);
+    dg__raceSelection = selectedIndex - 1; // items are 1 indexed, races are 0 indexed
+
+    PlayerSetRace(1, ct__raceId(dg__raceSelection));
+
+    if (dg__trainingArea == dg__trainingAreaHotkeys) {
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures) {
+            dg_hk__createScoresDialog(dg__raceSelection);
         }
     }
 }

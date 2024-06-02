@@ -8,16 +8,27 @@
 
 const int dg__trainingAreaHotkeys = 0;
 
+const int dg__scoreModeLatest = 0;
+const int dg__scoreModeProgress = 1;
+const int dg__scoreModeAllTime = 2;
+
 //////////////////////////////////////////////////////////////////
 // VARIABLES
 //////////////////////////////////////////////////////////////////
+int dg__scoresDialog;
+
+int dg__scoreMode;
+
+int dg__scoreModeLatestBtn;
+int dg__scoreModeProgressBtn;
+int dg__scoreModeAllTimeBtn;
 
 int dg__trainingAreaHotkeysBtn;
 
 int dg__trainingArea;
 
 int dg__racePulldown;
-int dg__RaceSelection;
+int dg__raceSelection;
 
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
@@ -34,6 +45,7 @@ void dg__dialogControlSelectItem(int control, playergroup players, int index);
 void dg__createSelectTrainingAreaDialog();
 
 void dg__onClickTrainingAreaHotkeysBtn();
+void dg__onClickScoreModeBtn(int control);
 void dg__onSelectionChangedRacePulldown(int control);
 
 void dg__test();

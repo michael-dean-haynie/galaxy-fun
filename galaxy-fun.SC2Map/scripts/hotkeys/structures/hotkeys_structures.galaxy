@@ -21,7 +21,6 @@ static int activeHotkeyPromptRaceIdx;
 static int activeHotkeyPromptCmdIdx;
 static int activeHotkeyPromptDialog;
 static timer activeHotkeyPromptTimer;
-static int activeScoresDialog;
 
 static unit activeHotkeyPromptUnit;
 static unit gasPropUnit;
@@ -37,8 +36,6 @@ static void promptUserForBuildStructureHotkey(int raceIdx);
 
 
 void hk_st__begin(int raceIdx) {
-    PlayerSetRace(1, ct__raceId(raceIdx));
-
     // start fresh with bank data
     bk__startHotkeysStructuresSession(raceIdx);
 
@@ -55,6 +52,8 @@ void hk_st__begin(int raceIdx) {
 
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
+
+    libNtve_gf_HideScreenButton(true, sb__stopBtn);
 
     promptUserForBuildStructureHotkey(raceIdx);
 }
@@ -99,13 +98,6 @@ void hk_st__stop() {
     CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
 
     dg_hk__createSelectTrainingModeDialog();
-}
-
-void hk_st__createScoresDialog(int raceIdx) {
-    if (activeScoresDialog != 0) {
-        DialogDestroy(activeScoresDialog);
-    }
-    activeScoresDialog = dg_hk__createScoresDialog(raceIdx);
 }
 
 void promptUserForBuildStructureHotkey(int raceIdx) {
@@ -202,10 +194,7 @@ void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
     UnitIssueOrder(triggeringUnit, Order(AbilityCommand("BuildInProgress", 0)), c_orderQueueReplace);
 
     // scores dialog
-    if (activeScoresDialog != 0) {
-        DialogDestroy(activeScoresDialog);
-    }
-    activeScoresDialog = dg_hk__createScoresDialog(activeHotkeyPromptRaceIdx);
+    dg_hk__createScoresDialog(activeHotkeyPromptRaceIdx);
 }
 
 bool hk_st__buildHotkeyPromptHasValue(int raceIdx, int cmdIdx) {

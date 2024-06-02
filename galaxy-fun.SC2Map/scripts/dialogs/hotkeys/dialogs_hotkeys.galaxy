@@ -67,7 +67,7 @@ void dg_hk__createSelectTrainingModeDialog() {
     DialogControlAddItem(racePulldown, PlayerGroupAll(), StringToText(dg__raceName(TERRAN)));
     DialogControlAddItem(racePulldown, PlayerGroupAll(), StringToText(dg__raceName(ZERG)));
     DialogControlAddItem(racePulldown, PlayerGroupAll(), StringToText(dg__raceName(PROTOSS)));
-    dg__dialogControlSelectItem(racePulldown, PlayerGroupAll(), dg__RaceSelection);
+    dg__dialogControlSelectItem(racePulldown, PlayerGroupAll(), dg__raceSelection);
 
     runningOffsetY += pulldownHeight;
 
@@ -200,9 +200,13 @@ int dg_hk__createScoresDialog(int race) {
     fixed totalDelay;
     fixed totalAvgDelay;
 
+    if (dg__scoresDialog != 0) {
+        DialogDestroy(dg__scoresDialog);
+    }
     DialogCreate(dialogWidth, dialogHeight, c_anchorTopRight, 0, 0, true);
     DialogSetVisible(DialogLastCreated(), PlayerGroupAll(), true);
     dialog = DialogLastCreated();
+    dg__scoresDialog = dialog;
 
     hk_st__init(); // make sure constants have been initialized
     
@@ -299,14 +303,22 @@ int dg_hk__createScoresDialog(int race) {
     runningOffsetY = dialogBaseTopPadding;
     runningOffsetX = dialogBaseLeftPadding;
 
-    dg_hk__latestBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Latest"), null);
-    libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    dg__scoreModeLatestBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Latest"), null);
+    if (dg__scoreMode == dg__scoreModeLatest) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
     runningOffsetX += pageButtonWidth;
 
-    dg_hk__progressBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Progress"), null);
+    dg__scoreModeProgressBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Progress"), null);
+    if (dg__scoreMode == dg__scoreModeProgress) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
     runningOffsetX += pageButtonWidth;
 
-    dg_hk__allTimeBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("All Time"), null);
+    dg__scoreModeAllTimeBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("All Time"), null);
+    if (dg__scoreMode == dg__scoreModeAllTime) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
     runningOffsetX += pageButtonWidth;
 
 
@@ -319,7 +331,7 @@ void dg_hk__onSelectionChangedHotkeyModePulldown(int dialogCtrlId) {
 
     if (dg__trainingArea == dg__trainingAreaHotkeys) {
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures) {
-            hk_st__createScoresDialog(dg__RaceSelection);
+            dg_hk__createScoresDialog(dg__raceSelection);
         }
     }
 }
@@ -328,7 +340,7 @@ void dg_hk__onClickBeginBtn() {
 
     if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures){
         DialogDestroy(selectTrainingModeDialog);
-        hk_st__begin(dg__RaceSelection);
+        hk_st__begin(dg__raceSelection);
     }
 }
 

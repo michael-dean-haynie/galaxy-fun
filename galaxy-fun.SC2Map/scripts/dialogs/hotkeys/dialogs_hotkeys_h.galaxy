@@ -16,10 +16,6 @@ int dg_hk__hotkeyModeUpgrades = 3;
 // VARIABLES
 //////////////////////////////////////////////////////////////////
 
-int dg_hk__latestBtn;
-int dg_hk__progressBtn;
-int dg_hk__allTimeBtn;
-
 int dg_hk_beginBtn;
 
 int dg_hk__hotkeyModePulldown;

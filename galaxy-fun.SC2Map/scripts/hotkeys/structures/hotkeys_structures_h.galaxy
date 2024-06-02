@@ -25,7 +25,6 @@ void hk_st__init();
 
 void hk_st__begin(int raceIdx);
 void hk_st__stop();
-void hk_st__createScoresDialog(int raceIdx);
 
 void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil);
 
