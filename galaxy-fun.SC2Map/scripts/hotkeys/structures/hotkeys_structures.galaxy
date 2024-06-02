@@ -53,17 +53,59 @@ void hk_st__begin(int raceIdx) {
     PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
     // PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 200.0); // not working?
 
-    // UISetResourceVisible(PlayerGroupAll(), c_resourceTypeMinerals, false);
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
 
-    // scores dialog
+    promptUserForBuildStructureHotkey(raceIdx);
+}
+
+void hk_st__stop() {
+    DialogDestroy(activeHotkeyPromptDialog);
+
+    // reset range of build abilities
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[TERRAN], "Range", 1, "0");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[ZERG], "Range", 1, "0");
+    CatalogFieldValueSet(c_gameCatalogAbil, BUILD_ABILITY_IDS[PROTOSS], "Range", 1, "0");
+
+    // re-enable techtree requirements
+    TechTreeRequirementsEnable(1, true);
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 0);
+    // PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 0.0); // not working?
+
+    // show resources again
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, true);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, true);
+
+    // remove worker
+    if (activeHotkeyPromptUnit != null) {
+        UnitRemove(activeHotkeyPromptUnit);
+        activeHotkeyPromptUnit = null;
+    }
+
+    // remove gas (if needed)
+    if (gasPropUnit != null) {
+        UnitRemove(gasPropUnit);
+        gasPropUnit = null;
+    }
+
+    // remove pylon (if needed)
+    if (pylonPropUnit != null) {
+        UnitRemove(pylonPropUnit);
+        pylonPropUnit = null;
+    }
+
+    // remove creep
+    CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
+
+    dg_hk__createSelectTrainingModeDialog();
+}
+
+void hk_st__createScoresDialog(int raceIdx) {
     if (activeScoresDialog != 0) {
         DialogDestroy(activeScoresDialog);
     }
-    activeScoresDialog = dg__createScoresDialog(raceIdx);
-
-    promptUserForBuildStructureHotkey(raceIdx);
+    activeScoresDialog = dg_hk__createScoresDialog(raceIdx);
 }
 
 void promptUserForBuildStructureHotkey(int raceIdx) {
@@ -83,15 +125,18 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
     if (activeHotkeyPromptDialog != 0) {
         DialogDestroy(activeHotkeyPromptDialog);
     }
-    activeHotkeyPromptDialog = dg__createHotkeyPromptDialog(
+    activeHotkeyPromptDialog = dg_hk__createHotkeyPromptDialog(
         hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].instruction,
         hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetTxt,
         hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].icon
     );
 
     // track response time
-    activeHotkeyPromptTimer = TimerCreate();
-    TimerStart(activeHotkeyPromptTimer, 9999.0, false, 1);
+    if (activeHotkeyPromptTimer == null) {
+        activeHotkeyPromptTimer = TimerCreate();
+        TimerStart(activeHotkeyPromptTimer, 9999.0, false, 1);
+    }
+    TimerRestart(activeHotkeyPromptTimer);
 
     // worker
     if (activeHotkeyPromptUnit != null && UnitGetType(activeHotkeyPromptUnit) != WORKER_UNIT_IDS[raceIdx]) {
@@ -160,7 +205,7 @@ void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
     if (activeScoresDialog != 0) {
         DialogDestroy(activeScoresDialog);
     }
-    activeScoresDialog = dg__createScoresDialog(activeHotkeyPromptRaceIdx);
+    activeScoresDialog = dg_hk__createScoresDialog(activeHotkeyPromptRaceIdx);
 }
 
 bool hk_st__buildHotkeyPromptHasValue(int raceIdx, int cmdIdx) {

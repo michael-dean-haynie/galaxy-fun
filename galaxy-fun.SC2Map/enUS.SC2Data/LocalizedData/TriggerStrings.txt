@@ -1,5 +1,5 @@
 ﻿CustomScript/Name/78FD7498=Bootstrap
-Trigger/Name/16AD5746=bank-debug
 Trigger/Name/546160B6=initialization
+Trigger/Name/56EA3A5E=button-callback
 Trigger/Name/FB83A08D=code-generation
 Variable/Name/935A0E38=screenHeight

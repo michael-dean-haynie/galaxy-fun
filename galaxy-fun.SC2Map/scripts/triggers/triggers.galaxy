@@ -2,8 +2,83 @@
 // VARIABLES
 //////////////////////////////////////////////////////////////////
 
+// static tr__callbackRegistration[100] dialogBtnClickCallbacks;
+// static const int dialogBtnClickCallbacksMaxCount = 100;
+
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
+//////////////////////////////////////////////////////////////////
+
+// static function declarations
+// static void executeDialogBtnClickCallback(string key);
+// static void runFunction(string itemString);
+
+// void tr__registerDialogCtrlBtnClickCallback(string key, string funcName, bool active) {
+//     int index = -1;
+//     int i;
+
+//     // find a vacant spot for a new registration
+//     if (active) {
+//         for(i = 0; i < dialogBtnClickCallbacksMaxCount; i += 1) {
+//             if (dialogBtnClickCallbacks[i].active == false) {
+//                 index = i;
+//                 dialogBtnClickCallbacks[i].active = true;
+//                 dialogBtnClickCallbacks[i].key = key;
+//                 dialogBtnClickCallbacks[i].funcName = funcName;
+
+//                 break;
+//             }
+//         }
+
+//         if (index < 0) {
+//             dbg("No vacancies found during callback registration in tr__registerDialogCtrlBtnClickCallback()");
+//             err("No vacancies found during callback registration in tr__registerDialogCtrlBtnClickCallback()");
+//         }
+//     }
+
+//     // de-activate existing spot
+//     else {
+//         for(i = 0; i < dialogBtnClickCallbacksMaxCount; i += 1) {
+//             if (dialogBtnClickCallbacks[i].key == key) {
+//                 index = i;
+//                 dialogBtnClickCallbacks[i].active = false;
+//                 break;
+//             }
+//         }
+
+//         if (index < 0) {
+//             dbg("Callback not found during callback de-registration in tr__registerDialogCtrlBtnClickCallback()");
+//             err("Callback not found during callback de-registration in tr__registerDialogCtrlBtnClickCallback()");
+//         }
+//     }
+
+// }
+
+// static void executeDialogBtnClickCallback(string key) {
+//     int index = -1;
+//     int i;
+
+//     for(i = 0; i < dialogBtnClickCallbacksMaxCount; i += 1) {
+//         if (dialogBtnClickCallbacks[i].key == key && dialogBtnClickCallbacks[i].active) {
+//             index = i;
+//             runFunction(dialogBtnClickCallbacks[i].funcName);
+//             break;
+//         }
+//     }
+
+//     // if (index < 0) {
+//     //     dbg("Callback not found during callback execution in executeDialogBtnClickCallback()");
+//     //     err("Callback not found during callback execution in executeDialogBtnClickCallback()");
+//     // }
+// }
+
+// static void runFunction(string itemString){
+//     trigger t = TriggerCreate(itemString);
+//     TriggerExecute(t, false, false);
+//     TriggerDestroy(t);
+// }
+
+
 //////////////////////////////////////////////////////////////////
 
 void mapInit_Init () {
@@ -35,6 +110,66 @@ bool tr__unitIsCreated_Func (bool testConds, bool runActions) {
 
 //////////////////////////////////////////////////////////////////
 
+void dialogControlClicked_Init () {
+    tr__dialogControlClicked = TriggerCreate("tr__dialogControlClicked_Func");
+    TriggerAddEventDialogControl(tr__dialogControlClicked, c_playerAny, c_invalidDialogControlId, c_triggerControlEventTypeClick);
+}
+
+bool tr__dialogControlClicked_Func (bool testConds, bool runActions) {
+    int dialogCtrlId = EventDialogControl();
+
+    if (!runActions) {
+        return true;
+    }
+
+    if (dialogCtrlId == dg__trainingAreaHotkeysBtn) {
+        dg__onClickTrainingAreaHotkeysBtn();
+    }
+
+    if (dialogCtrlId == dg_hk_beginBtn) {
+        dg_hk__onClickBeginBtn();
+    }
+
+    if (dialogCtrlId == dg_hk__latestBtn) {
+        dbg("latest");
+    }
+    if (dialogCtrlId == dg_hk__progressBtn) {
+        dbg("progress");
+    }
+    if (dialogCtrlId == dg_hk__allTimeBtn) {
+        dbg("all time");
+    }
+
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
+void dialogControlSelectionChanged_Init () {
+    tr__dialogControlSelectionChanged = TriggerCreate("tr__dialogControlSelectionChanged_Func");
+    TriggerAddEventDialogControl(tr__dialogControlSelectionChanged, c_playerAny, c_invalidDialogControlId, c_triggerControlEventTypeSelectionChanged);
+}
+
+bool tr__dialogControlSelectionChanged_Func (bool testConds, bool runActions) {
+    int dialogCtrlId = EventDialogControl();
+
+    if (!runActions) {
+        return true;
+    }
+
+    if (dialogCtrlId == dg__racePulldown) {
+        dg__onSelectionChangedRacePulldown(dialogCtrlId);
+    }
+
+    if (dialogCtrlId == dg_hk__hotkeyModePulldown) {
+        dg_hk__onSelectionChangedHotkeyModePulldown(dialogCtrlId);
+    }
+
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
 void showHideSB_Init () {
     tr__showHideSB = TriggerCreate("tr__showHideSB_Func");
 }
@@ -46,34 +181,12 @@ bool tr__showHideSB_Func (bool testConds, bool runActions) {
 
 //////////////////////////////////////////////////////////////////
 
-void terranSB_Init () {
-    tr__terranSB = TriggerCreate("tr__terranSB_Func");
+void stopSB_Init () {
+    tr__stopSB = TriggerCreate("tr__stopSB_Func");
 }
 
-bool tr__terranSB_Func (bool testConds, bool runActions) {
-    hk_st__begin(TERRAN);
-    return true;
-}
-
-//////////////////////////////////////////////////////////////////
-
-void zergSB_Init () {
-    tr__zergSB = TriggerCreate("tr__zergSB_Func");
-}
-
-bool tr__zergSB_Func (bool testConds, bool runActions) {
-    hk_st__begin(ZERG);
-    return true;
-}
-
-//////////////////////////////////////////////////////////////////
-
-void protossSB_Init () {
-    tr__protossSB = TriggerCreate("tr__protossSB_Func");
-}
-
-bool tr__protossSB_Func (bool testConds, bool runActions) {
-    hk_st__begin(PROTOSS);
+bool tr__stopSB_Func (bool testConds, bool runActions) {
+    sb__onClickStopBtn();
     return true;
 }
 
@@ -83,12 +196,11 @@ bool tr__protossSB_Func (bool testConds, bool runActions) {
 
 void tr__init() {
     mapInit_Init();
-
     unitIsCreated_Init();
+    dialogControlClicked_Init();
+    dialogControlSelectionChanged_Init();
 
     // Screen Button Triggers
     showHideSB_Init();
-    terranSB_Init();
-    zergSB_Init();
-    protossSB_Init();
+    stopSB_Init();
 }

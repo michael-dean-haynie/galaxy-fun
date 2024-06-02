@@ -24,9 +24,9 @@ void printMsg(text msg, int p, int t) {
 // Usually, you want all user-facing text to be just that - |text|.
 // But in some cases, it is not useful, like for debug, system, and error messages - who cares.
 // The reason for |text| is that it is localizable, so it can be translated into other languages.
-void err(string msg) { printMsg(StringToText(msg), 1, c_messageTypeError); }
-void dbg(string msg) { printMsg(StringToText(msg), 1, c_messageTypeDebug); }
-void sys(string msg) { printMsg(StringToText(msg), 1, c_messageTypeSystem); }
+void err(string msg) { printMsg(StringToText(msg), c_playerAny, c_messageTypeError); }
+void dbg(string msg) { printMsg(StringToText(msg), c_playerAny, c_messageTypeDebug); }
+void sys(string msg) { printMsg(StringToText(msg), c_playerAny, c_messageTypeSystem); }
 
 // // Looks up the given string in the given catalog and returns either
 // // a space-separated list of matches, or an exact match that can be used

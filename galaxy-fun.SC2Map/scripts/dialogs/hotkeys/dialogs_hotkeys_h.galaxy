@@ -6,34 +6,35 @@
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
-const int dg__trainingAreaHotkeys = 0;
+int dg_hk__hotkeyModeStructures = 0;
+int dg_hk__hotkeyModeProduction = 1;
+int dg_hk__hotkeyModeAbilities = 2;
+int dg_hk__hotkeyModeUpgrades = 3;
+
 
 //////////////////////////////////////////////////////////////////
 // VARIABLES
 //////////////////////////////////////////////////////////////////
 
-int dg__trainingAreaHotkeysBtn;
+int dg_hk__latestBtn;
+int dg_hk__progressBtn;
+int dg_hk__allTimeBtn;
 
-int dg__trainingArea;
+int dg_hk_beginBtn;
 
-int dg__racePulldown;
-int dg__RaceSelection;
+int dg_hk__hotkeyModePulldown;
+int dg_hk__hotkeyMode;
 
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
 
-void dg__init();
+void dg_hk__init();
 
-string dg__raceName(int raceInt);
-int dg__raceInt(string raceName);
+void dg_hk__createSelectTrainingModeDialog();
 
-// convenience wrapper
-void dg__dialogControlSelectItem(int control, playergroup players, int index);
+int dg_hk__createHotkeyPromptDialog(string headingStr, text structureTxt, string iconStr);
+int dg_hk__createScoresDialog(int race);
 
-void dg__createSelectTrainingAreaDialog();
-
-void dg__onClickTrainingAreaHotkeysBtn();
-void dg__onSelectionChangedRacePulldown(int control);
-
-void dg__test();
+void dg_hk__onSelectionChangedHotkeyModePulldown(int dialogCtrlId);
+void dg_hk__onClickBeginBtn();

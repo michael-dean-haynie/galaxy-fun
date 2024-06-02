@@ -6,34 +6,12 @@
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
-const int dg__trainingAreaHotkeys = 0;
-
 //////////////////////////////////////////////////////////////////
 // VARIABLES
 //////////////////////////////////////////////////////////////////
-
-int dg__trainingAreaHotkeysBtn;
-
-int dg__trainingArea;
-
-int dg__racePulldown;
-int dg__RaceSelection;
 
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
 
-void dg__init();
-
-string dg__raceName(int raceInt);
-int dg__raceInt(string raceName);
-
-// convenience wrapper
-void dg__dialogControlSelectItem(int control, playergroup players, int index);
-
-void dg__createSelectTrainingAreaDialog();
-
-void dg__onClickTrainingAreaHotkeysBtn();
-void dg__onSelectionChangedRacePulldown(int control);
-
-void dg__test();
+void tp__init();

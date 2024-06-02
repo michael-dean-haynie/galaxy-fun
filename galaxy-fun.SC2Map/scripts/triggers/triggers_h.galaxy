@@ -1,21 +1,25 @@
 //////////////////////////////////////////////////////////////////
 // STRUCTS
 //////////////////////////////////////////////////////////////////
+struct tr__callbackRegistration
+{
+    string key;
+    string funcName;
+    bool active;
+};
 
 //////////////////////////////////////////////////////////////////
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
 trigger tr__mapInit;
-
 trigger tr__unitIsCreated;
+trigger tr__dialogControlClicked;
+trigger tr__dialogControlSelectionChanged;
 
 // Screen Button Triggers
 trigger tr__showHideSB;
-trigger tr__terranSB;
-trigger tr__zergSB;
-trigger tr__protossSB;
-
+trigger tr__stopSB;
 
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
@@ -23,8 +27,12 @@ trigger tr__protossSB;
 
 void tr__init();
 
+bool tr__mapInit_Func(bool testConds, bool runActions);
 bool tr__unitIsCreated_Func (bool testConds, bool runActions);
+bool tr__dialogControlClicked_Func (bool testConds, bool runActions);
+bool tr__dialogControlSelectionChanged_Func (bool testConds, bool runActions);
+
 bool tr__showHideSB_Func (bool testConds, bool runActions);
-bool tr__terranSB_Func (bool testConds, bool runActions);
-bool tr__zergSB_Func (bool testConds, bool runActions);
-bool tr__protossSB_Func (bool testConds, bool runActions);
+bool tr__stopSB_Func (bool testConds, bool runActions);
+
+void tr__registerDialogCtrlBtnClickCallback(string key, string funcName, bool active);

@@ -19,6 +19,7 @@ void InitLibs () {
 //--------------------------------------------------------------------------------------------------
 trigger gt_initialization;
 trigger gt_codegeneration;
+trigger gt_buttoncallback;
 
 //--------------------------------------------------------------------------------------------------
 // Custom Script: Bootstrap
@@ -82,6 +83,7 @@ bool gt_codegeneration_Func (bool testConds, bool runActions) {
         return true;
     }
 
+    libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), false, PlayerGroupAll());
     UISetResourceVisible(PlayerGroupAll(), c_resourceTypeMinerals, false);
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
@@ -99,11 +101,40 @@ void gt_codegeneration_Init () {
 }
 
 //--------------------------------------------------------------------------------------------------
+// Trigger: button-callback
+//--------------------------------------------------------------------------------------------------
+bool gt_buttoncallback_Func (bool testConds, bool runActions) {
+    // Automatic Variable Declarations
+    // Conditions
+    if (testConds) {
+        if (!((EventDialogControl() == EventDialogControl()))) {
+            return false;
+        }
+    }
+
+    // Actions
+    if (!runActions) {
+        return true;
+    }
+
+    TriggerDebugOutput(1, IntToText(0), true);
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+void gt_buttoncallback_Init () {
+    gt_buttoncallback = TriggerCreate("gt_buttoncallback_Func");
+    TriggerEnable(gt_buttoncallback, false);
+    TriggerAddEventDialogControl(gt_buttoncallback, c_playerAny, c_invalidDialogControlId, c_triggerControlEventTypeClick);
+}
+
+//--------------------------------------------------------------------------------------------------
 // Trigger Initialization
 //--------------------------------------------------------------------------------------------------
 void InitTriggers () {
     gt_initialization_Init();
     gt_codegeneration_Init();
+    gt_buttoncallback_Init();
 }
 
 //--------------------------------------------------------------------------------------------------

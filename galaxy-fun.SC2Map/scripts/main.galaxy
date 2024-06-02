@@ -4,32 +4,37 @@ const int PROTOSS = 2;
 const int RACE_COUNT = 3;
 
 // module headers
+// include "scripts/template/template_h.galaxy" // example boilerplate
 include "scripts/util/util_h"
 include "scripts/catalog/catalog_h"
 include "scripts/bank/bank_h"
 include "scripts/scores/scores_h"
 include "scripts/triggers/triggers_h"
 include "scripts/dialogs/dialogs_h"
+include "scripts/dialogs/hotkeys/dialogs_hotkeys_h"
 include "scripts/screenbuttons/screenbuttons_h"
 include "scripts/hotkeys/structures/hotkeys_structures_h"
 
 // module implementations
+// include "scripts/template/template.galaxy" // example boilerplate
 include "scripts/util/util"
 include "scripts/catalog/catalog"
 include "scripts/bank/bank"
 include "scripts/scores/scores"
 include "scripts/triggers/triggers"
 include "scripts/dialogs/dialogs"
+include "scripts/dialogs/hotkeys/dialogs_hotkeys"
 include "scripts/screenbuttons/screenbuttons"
 include "scripts/hotkeys/structures/hotkeys_structures"
 
-
 void main() {
-    // initialization
     dbg("starting main()");
+
+    // initialization
+    // tp__init();  // template/template.galaxy - example boilerplate
     ut__init();     // util/util.galaxy
     ct__init();     // catalog/catalog.galaxy
-    // bk__init();     // bank/bank.galaxy - triggered by mapInit trigger
+    // bk__init();  // bank/bank.galaxy - needs to be triggered by mapInit trigger (idk/idc)
     sc__init();     // scores/scores.galaxy
     tr__init();     // triggers/triggers.galaxy
     dg__init();     // dialogs/dialogs.galaxy
@@ -37,7 +42,9 @@ void main() {
     hk_st__init();  // hotkeys/structures/hotkeys_structures.galaxy
 
     ///////////////////////////////////////
-    hk_st__begin(TERRAN);
+
+    // hk_st__begin(TERRAN);
+    dg__createSelectTrainingAreaDialog();
 
     dbg("finishing main()");
 }
