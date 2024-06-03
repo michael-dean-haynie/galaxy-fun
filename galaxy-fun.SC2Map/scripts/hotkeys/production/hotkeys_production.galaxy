@@ -1,0 +1,373 @@
+//////////////////////////////////////////////////////////////////
+// CONSTANTS
+//////////////////////////////////////////////////////////////////
+
+static string pylonUnitId = "Pylon";
+
+//////////////////////////////////////////////////////////////////
+// VARIABLES
+//////////////////////////////////////////////////////////////////
+
+static bool initialized = false;
+
+static int activeRace;
+static int activeCaster;
+static int activeCmd;
+static int activeHotkeyPromptDialog;
+static unit activeCasterUnit;
+static unit pylonPropUnit;
+static timer activeTimer;
+
+//////////////////////////////////////////////////////////////////
+// FUNCTIONS
+//////////////////////////////////////////////////////////////////
+
+
+// static function declarations
+static void initHotkeyPrompts ();
+static void promptUserForProductionHotkey(int race, bool doGetNewPrompt);
+
+void hk_pd__begin(int raceIdx) {
+    int casterIdx;
+    int cmdIdx;
+
+    string fieldPath;
+    string abilityId;
+
+    // start fresh with bank data
+    bk__startHotkeysProductionSession(raceIdx);
+
+    // temp eliminate training time
+    for(casterIdx = 0; casterIdx < hk_pd__castersSize; casterIdx += 1) {
+        if(hk_pd__castersElementHasValue(raceIdx, casterIdx)) {
+            for(cmdIdx = 0; cmdIdx < hk_pd__promptsSize; cmdIdx += 1) {
+                if (hk_pd__promptsElementHasValue(raceIdx, casterIdx, cmdIdx)) {
+                    abilityId = hk_pd__casters[raceIdx][casterIdx].ability;
+                    fieldPath = "InfoArray[" + IntToString(cmdIdx) + "].Time";
+                    CatalogFieldValueSet(c_gameCatalogAbil, abilityId, fieldPath, 1, FixedToString(0.0, 2));
+                }
+            }
+        }
+    }
+    
+    // Remove Techtree Requirements / set resources / supply
+    TechTreeRequirementsEnable(1, false);
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 999999);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 200.0);
+
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
+
+    libNtve_gf_HideScreenButton(true, sb__stopBtn);
+
+    promptUserForProductionHotkey(raceIdx, true);
+}
+
+void hk_pd__stop() {
+    int raceIdx = activeRace;
+    int casterIdx;
+    int cmdIdx;
+
+    string fieldPath;
+    string abilityId;
+    fixed originalTime;
+
+    DialogDestroy(activeHotkeyPromptDialog);
+
+    // re-enable techtree requirements
+    TechTreeRequirementsEnable(1, true);
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 0.0);
+
+    // reset training time
+    for(casterIdx = 0; casterIdx < hk_pd__castersSize; casterIdx += 1) {
+        if(hk_pd__castersElementHasValue(raceIdx, casterIdx)) {
+            for(cmdIdx = 0; cmdIdx < hk_pd__promptsSize; cmdIdx += 1) {
+                if (hk_pd__promptsElementHasValue(raceIdx, casterIdx, cmdIdx)) {
+                    abilityId = hk_pd__casters[raceIdx][casterIdx].ability;
+                    originalTime = hk_pd__prompts[raceIdx][casterIdx][cmdIdx].producedUnitTime;
+                    fieldPath = "InfoArray[" + IntToString(cmdIdx) + "].Time";
+                    CatalogFieldValueSet(c_gameCatalogAbil, abilityId, fieldPath, 1, FixedToString(originalTime, 2));
+                }
+            }
+        }
+    }
+
+    // show resources again
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, true);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, true);
+
+    // remove caster
+    if (activeCasterUnit != null) {
+        UnitRemove(activeCasterUnit);
+        activeCasterUnit = null;
+    }
+
+    // remove pylon (if needed)
+    if (pylonPropUnit != null) {
+        UnitRemove(pylonPropUnit);
+        pylonPropUnit = null;
+    }
+
+    // remove creep
+    CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
+
+    dg_hk__createSelectTrainingModeDialog();
+}
+
+static void promptUserForProductionHotkey(int race, bool doGetNewPrompt) {
+    string casterUnitId;
+    string abilityId;
+
+    int caster = activeCaster;
+    int cmd = activeCmd;
+
+
+    if (doGetNewPrompt) {
+        caster = RandomInt(0, hk_pd__castersSize - 1);
+        cmd = RandomInt(0, hk_pd__promptsSize - 1);
+
+        // get valid random caster
+        while(!hk_pd__castersElementHasValue(race, caster)) {
+            caster = RandomInt(0, hk_pd__castersSize - 1);
+        }
+
+        // get valid random cmd
+        while(!hk_pd__promptsElementHasValue(race, caster, cmd)) {
+            cmd = RandomInt(0, hk_pd__promptsSize - 1);
+        }
+    }
+
+    activeCaster = caster;
+    activeCmd = cmd;
+    activeRace = race;
+
+    // prompt dialog
+    if (activeHotkeyPromptDialog != 0) {
+        DialogDestroy(activeHotkeyPromptDialog);
+    }
+    activeHotkeyPromptDialog = dg_hk__createHotkeyPromptDialog(
+        hk_pd__prompts[race][caster][cmd].promptInstruction,
+        hk_pd__prompts[race][caster][cmd].promptTargetTxt,
+        hk_pd__prompts[race][caster][cmd].abilityIconSrc
+    );
+
+    // track response time
+    if (activeTimer == null) {
+        activeTimer = TimerCreate();
+        TimerStart(activeTimer, 9999.0, false, 1);
+    }
+    TimerRestart(activeTimer);
+
+    // caster
+    if (activeCasterUnit != null && UnitGetType(activeCasterUnit) != hk_pd__casters[race][caster].unitId) {
+        UnitRemove(activeCasterUnit);
+        activeCasterUnit = null;
+    }
+    if (activeCasterUnit == null) {
+        libNtve_gf_CreateUnitsAtPoint2(1, hk_pd__casters[race][caster].unitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_structure_location"));
+        activeCasterUnit = UnitLastCreated();
+    }
+    UnitSelect(activeCasterUnit, 1, true);
+
+    // pylon (if needed)
+    if (pylonPropUnit != null && race != PROTOSS) {
+        UnitRemove(pylonPropUnit);
+        pylonPropUnit = null;
+    }
+    if (pylonPropUnit == null && race == PROTOSS) {
+        libNtve_gf_CreateUnitsAtPoint2(1, pylonUnitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
+        pylonPropUnit = UnitLastCreated();
+    }
+
+    // creep (if needed)
+    if (race == ZERG) {
+        CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, true, true);
+    }
+    if (race != ZERG) {
+        CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
+    }
+}
+
+void hk_pd__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
+    string triggeringUnitId = UnitGetType(triggeringUnit);
+    string targetUnitId = hk_pd__prompts[activeRace][activeCaster][activeCmd].producedUnitId;
+    string targetAbilityId = hk_pd__casters[activeRace][activeCaster].ability;
+
+    unitgroup ug;
+    int ugCount;
+    unit ugUnit;
+
+    bool success = triggeringUnitId == targetUnitId;
+
+    if (triggeringAbil != targetAbilityId) {
+        return; // unit was probably created by trigger or some other way
+    }
+
+    // success
+    if (success) {
+        bk__saveHotkeysProductionAttempt(activeRace, targetUnitId, true, TimerGetElapsed(activeTimer));
+    }
+    // failure
+    else {
+        bk__saveHotkeysProductionAttempt(activeRace, targetUnitId, false, 0.0);
+    }
+
+    // just kill everything in that general area (blame zerg weird morphing unit complexity)
+    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    ugCount = UnitGroupCount(ug, c_unitCountAll);
+    for (;; ugCount -= 1) {
+        ugUnit = UnitGroupUnitFromEnd(ug, ugCount);
+        if (ugUnit == null) { break; }
+        if (UnitGetType(ugUnit) == pylonUnitId) {
+            continue;
+        }
+        UnitKill(ugUnit);
+    }
+
+    activeCasterUnit = null;
+
+    // scores dialog
+    dg_hk__createProductionScoresDialog(activeRace);
+
+    promptUserForProductionHotkey(activeRace, success);
+
+}
+
+bool hk_pd__castersElementHasValue(int race, int caster) {
+    if (hk_pd__casters[race][caster].unitId != null) {
+        return true;
+    }
+    return false;
+}
+
+bool hk_pd__promptsElementHasValue(int race, int caster, int command) {
+    if (hk_pd__prompts[race][caster][command].promptInstruction != null) {
+        return true;
+    }
+    return false;
+}
+
+//////////////////////////////////////////////////////////////////
+// Initialization
+//////////////////////////////////////////////////////////////////
+
+void hk_pd__init() {
+    if (initialized) {
+        return;
+    }
+
+    hk_pd__casters[TERRAN][0].unitId = "CommandCenter";
+    hk_pd__casters[TERRAN][0].ability = "CommandCenterTrain";
+    hk_pd__casters[TERRAN][1].unitId = "Barracks";
+    hk_pd__casters[TERRAN][1].ability = "BarracksTrain";
+    hk_pd__casters[TERRAN][2].unitId = "Factory";
+    hk_pd__casters[TERRAN][2].ability = "FactoryTrain";
+    hk_pd__casters[TERRAN][3].unitId = "Starport";
+    hk_pd__casters[TERRAN][3].ability = "StarportTrain";
+
+    hk_pd__casters[ZERG][0].unitId = "Hatchery";
+    hk_pd__casters[ZERG][0].ability = "TrainQueen";
+    hk_pd__casters[ZERG][1].unitId = "Larva";
+    hk_pd__casters[ZERG][1].ability = "LarvaTrain";
+
+    hk_pd__casters[PROTOSS][0].unitId = "Nexus";
+    hk_pd__casters[PROTOSS][0].ability = "NexusTrain";
+    hk_pd__casters[PROTOSS][1].unitId = "Gateway";
+    hk_pd__casters[PROTOSS][1].ability = "GatewayTrain";
+    hk_pd__casters[PROTOSS][2].unitId = "RoboticsFacility";
+    hk_pd__casters[PROTOSS][2].ability = "RoboticsFacilityTrain";
+    hk_pd__casters[PROTOSS][3].unitId = "Stargate";
+    hk_pd__casters[PROTOSS][3].ability = "StargateTrain";
+
+    initHotkeyPrompts();
+
+    initialized = true;
+}
+
+static void initHotkeyPrompts () {
+    int race;
+    int caster;
+
+    string casterUnitIconSrc;
+    string casterUnitNameStr;
+    text casterUnitNameTxt;
+
+    int cardLayoutCount;
+    int cardLayout;
+
+    int layoutButtonCount;
+    int layoutButton;
+    string layoutButtonType;
+
+    string abilCmdStr;
+    abilcmd abilCmd;
+    string ability;
+    int command;
+
+    string producedUnitId;
+    string producedUnitNameStr;
+    text producedUnitNameTxt;
+    fixed producedUnitTime;
+
+    string abilityButtonId;
+    string abilityIconSrc;
+
+
+    string fieldPath;
+
+    for (race = 0; race < RACE_COUNT; race += 1) {
+        for (caster = 0; caster < hk_pd__castersSize; caster += 1) {
+            if (hk_pd__castersElementHasValue(race, caster)) {
+                // hopefully this always works?
+                casterUnitIconSrc = CatalogFieldValueGet(c_gameCatalogButton, hk_pd__casters[race][caster].unitId, "Icon", 1);
+                casterUnitNameStr = CatalogFieldValueGet(c_gameCatalogUnit, hk_pd__casters[race][caster].unitId, "Name", 1);
+                casterUnitNameTxt = StringExternal(casterUnitNameStr);
+
+                cardLayoutCount = CatalogFieldValueCount(c_gameCatalogUnit, hk_pd__casters[race][caster].unitId, "CardLayouts", 1);
+                for (cardLayout = 0; cardLayout < cardLayoutCount; cardLayout += 1) {
+                    fieldPath = "CardLayouts[" + IntToString(cardLayout) + "].LayoutButtons";
+                    layoutButtonCount = CatalogFieldValueCount(c_gameCatalogUnit, hk_pd__casters[race][caster].unitId, fieldPath, 1);
+                    for (layoutButton = 0; layoutButton < layoutButtonCount; layoutButton += 1) {
+                        fieldPath = "CardLayouts[" + IntToString(cardLayout) + "].LayoutButtons[" + IntToString(layoutButton) + "].Type";
+                        layoutButtonType = CatalogFieldValueGet(c_gameCatalogUnit, hk_pd__casters[race][caster].unitId, fieldPath, 1);
+
+                        fieldPath = "CardLayouts[" + IntToString(cardLayout) + "].LayoutButtons[" + IntToString(layoutButton) + "].AbilCmd";
+                        abilCmdStr = CatalogFieldValueGet(c_gameCatalogUnit, hk_pd__casters[race][caster].unitId, fieldPath, 1);
+                        abilCmd = StringToAbilCmd(abilCmdStr);
+                        ability = AbilityCommandGetAbility(abilCmd);
+                        command = AbilityCommandGetCommand(abilCmd);
+
+                        if (layoutButtonType == "AbilCmd" && ability == hk_pd__casters[race][caster].ability) {
+                            fieldPath = "InfoArray[" + IntToString(command) + "].Unit[0]";
+                            producedUnitId = CatalogFieldValueGet(c_gameCatalogAbil, ability, fieldPath, 1);
+
+                            fieldPath = "InfoArray[" + IntToString(command) + "].Time";
+                            producedUnitTime = StringToFixed(CatalogFieldValueGet(c_gameCatalogAbil, ability, fieldPath, 1));
+
+                            fieldPath = "InfoArray[" + IntToString(command) + "].Button.DefaultButtonFace";
+                            abilityButtonId = CatalogFieldValueGet(c_gameCatalogAbil, AbilityCommandGetAbility(abilCmd), fieldPath, 1);
+                            abilityIconSrc = CatalogFieldValueGet(c_gameCatalogButton, abilityButtonId, "Icon", 1);
+
+                            producedUnitNameStr = CatalogFieldValueGet(c_gameCatalogUnit, producedUnitId, "Name", 1);
+                            producedUnitNameTxt = StringExternal(producedUnitNameStr);
+
+                            hk_pd__prompts[race][caster][command].promptInstruction = "Train Unit";
+                            hk_pd__prompts[race][caster][command].casterUnitId = hk_pd__casters[race][caster].unitId;
+                            hk_pd__prompts[race][caster][command].casterUnitIconSrc = casterUnitIconSrc;
+                            hk_pd__prompts[race][caster][command].casterUnitTxt = casterUnitNameTxt;
+                            hk_pd__prompts[race][caster][command].producedUnitId = producedUnitId;
+                            hk_pd__prompts[race][caster][command].producedUnitTime = producedUnitTime;
+                            hk_pd__prompts[race][caster][command].abilityIconSrc = abilityIconSrc;
+                            hk_pd__prompts[race][caster][command].promptTargetTxt = producedUnitNameTxt;
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
+}

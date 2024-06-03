@@ -17,6 +17,7 @@ static int selectTrainingModeDialog;
 static int hotkeyModeInt(string str);
 static string hotkeyModeStr(int integer);
 static void populateCellWithIconAndText (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, string iconSrc, text cellText);
+static void populateCellWithIconAndTextIndented (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, string iconSrc, text cellText, int indentationWidth);
 static void populateCellWithText (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, text cellText);
 static void createHorizontalRule(int dialog, int xOfs, int yOfs, int ruleWidth, int ruleHeight);
 static text formatAccuracy(int successes, int attempts, int accuracyScore);
@@ -80,10 +81,10 @@ void dg_hk__createSelectTrainingModeDialog() {
     DialogControlSetSize(hotkeyModePulldown, PlayerGroupAll(), pulldownWidth, pulldownHeight);
 
     DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeStructures)));
-    // DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeProduction)));
+    DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeProduction)));
     // DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeAbilities)));
     // DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeUpgrades)));
-    dg__dialogControlSelectItem(hotkeyModePulldown, PlayerGroupAll(), 0);
+    dg__dialogControlSelectItem(hotkeyModePulldown, PlayerGroupAll(), dg_hk__hotkeyMode);
 
     runningOffsetY += pulldownHeight * 2;
 
@@ -153,13 +154,9 @@ int dg_hk__createHotkeyPromptDialog(string headingStr, text structureTxt, string
     return DialogLastCreated();
 }
 
-int dg_hk__createScoresDialog(int race) {
+int dg_hk__createStructuresScoresDialog(int race) {
     int dialog;
     int cmdIdx;
-
-    string headerLineIcon;
-    int headerLineIconWidth;
-    int headerLineIconHeight;
 
     text structureText;
     string structureIconSrc;
@@ -179,13 +176,11 @@ int dg_hk__createScoresDialog(int race) {
     int headerCellHeight = 16;
     int rowCellHeight = 16;
 
-    int pageButtonWidth = FixedToInt(tableWidth * 0.33);
-    int pageButtonHeight = 50;
+    int modeButtonWidth = FixedToInt(tableWidth * 0.33);
+    int modeButtonHeight = 50;
 
     int runningOffsetX = dialogBaseLeftPadding;
     int runningOffsetY = dialogBaseTopPadding;
-
-    string blankIconSrc = "Assets\\Textures\\btn-blank.dds";
 
     int attempts;
     int failures;
@@ -234,9 +229,9 @@ int dg_hk__createScoresDialog(int race) {
     // rows
     for(cmdIdx = 0; cmdIdx < hk_st__buildHotkeyPromptCmdCount; cmdIdx += 1) {
         if (hk_st__buildHotkeyPromptHasValue(race, cmdIdx)) {
-            structureIconSrc = hk_st__buildHotkeyPrompts[race][cmdIdx].icon;
-            structureText = hk_st__buildHotkeyPrompts[race][cmdIdx].targetTxt;
-            structureId = hk_st__buildHotkeyPrompts[race][cmdIdx].targetUnitId;
+            structureIconSrc = hk_st__buildHotkeyPrompts[race][cmdIdx].abilityIconSrc;
+            structureText = hk_st__buildHotkeyPrompts[race][cmdIdx].promptTargetTxt;
+            structureId = hk_st__buildHotkeyPrompts[race][cmdIdx].producedUnitId;
 
             // Structure column
             populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, structureColumnWidth, rowCellHeight, structureIconSrc, structureText);
@@ -300,26 +295,212 @@ int dg_hk__createScoresDialog(int race) {
 
 
     // bottom buttons
-    runningOffsetY = dialogBaseTopPadding;
+    runningOffsetY = dialogBaseBottomPadding;
     runningOffsetX = dialogBaseLeftPadding;
 
-    dg__scoreModeLatestBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Latest"), null);
+    dg__scoreModeLatestBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Latest"), null);
     if (dg__scoreMode == dg__scoreModeLatest) {
         libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
     }
-    runningOffsetX += pageButtonWidth;
+    runningOffsetX += modeButtonWidth;
 
-    dg__scoreModeProgressBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Progress"), null);
+    dg__scoreModeProgressBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Progress"), null);
     if (dg__scoreMode == dg__scoreModeProgress) {
         libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
     }
-    runningOffsetX += pageButtonWidth;
+    runningOffsetX += modeButtonWidth;
 
-    dg__scoreModeAllTimeBtn = libNtve_gf_CreateDialogItemButton(dialog, pageButtonWidth, pageButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("All Time"), null);
+    dg__scoreModeAllTimeBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("All Time"), null);
     if (dg__scoreMode == dg__scoreModeAllTime) {
         libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
     }
-    runningOffsetX += pageButtonWidth;
+    runningOffsetX += modeButtonWidth;
+
+
+    return DialogLastCreated();
+}
+
+int dg_hk__createProductionScoresDialog(int race) {
+    int dialog;
+    int casterIdx;
+    int cmdIdx;
+
+    string casterUnitIconSrc;
+    text casterUnitTxt;
+    string casterUnitId;
+
+    string trainedUnitIconSrc;
+    text trainedUnitTxt;
+    string trainedUnitId;
+
+    int dialogWidth = 460;
+    int dialogHeight = 875;
+    int dialogBaseLeftPadding = 32;
+    int dialogBaseTopPadding = 30;
+    int dialogBaseBottomPadding = 25;
+
+    int tableWidth = dialogWidth - (dialogBaseLeftPadding * 2);
+    int delayColumnWidth = FixedToInt(Round(tableWidth * 0.16));
+    int accuracyColumnWidth = FixedToInt(Round(tableWidth * 0.42));
+    int unitColumnWidth = tableWidth - delayColumnWidth - accuracyColumnWidth;
+    bool casterRowCreated;
+
+    int headerCellHeight = 16;
+    int rowCellHeight = 16;
+    int indentationWidth = rowCellHeight; // so it will be the same as the icon width;
+
+    int modeButtonWidth = FixedToInt(tableWidth * 0.33);
+    int modeButtonHeight = 50;
+
+    int runningOffsetX = dialogBaseLeftPadding;
+    int runningOffsetY = dialogBaseTopPadding;
+
+    int attempts;
+    int failures;
+    int successes;
+    int accuracyScore;
+    fixed delay;
+
+    int totalAttempts;
+    int totalFailures;
+    int totalSuccesses;
+    int totalAccuracyScore;
+    fixed totalDelay;
+    fixed totalAvgDelay;
+
+    if (dg__scoresDialog != 0) {
+        DialogDestroy(dg__scoresDialog);
+    }
+    DialogCreate(dialogWidth, dialogHeight, c_anchorTopRight, 0, 0, true);
+    DialogSetVisible(DialogLastCreated(), PlayerGroupAll(), true);
+    dialog = DialogLastCreated();
+    dg__scoresDialog = dialog;
+
+    hk_pd__init(); // make sure constants have been initialized
+
+    // column headers
+    // column 1 header cell (Unit)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, unitColumnWidth, headerCellHeight, null, StringToText("Unit"));
+    runningOffsetX += unitColumnWidth;
+
+    // column 2 header cell (Accuracy)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, headerCellHeight, "Assets\\Textures\\btn-ability-terran-snipe-color.dds", StringToText("Accuracy"));
+    runningOffsetX += accuracyColumnWidth;
+
+    // column 3 header cell (Delay)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, headerCellHeight, "Assets\\Textures\\icon-time-protoss.dds", StringToText("Delay"));
+    runningOffsetX += delayColumnWidth;
+
+    runningOffsetX = dialogBaseLeftPadding;
+    runningOffsetY += headerCellHeight;
+
+    // header line
+    createHorizontalRule(dialog, runningOffsetX, runningOffsetY, tableWidth, 6);
+    runningOffsetY += headerCellHeight;
+
+    // rows
+    for(casterIdx = 0; casterIdx < hk_pd__castersSize; casterIdx += 1) {
+        casterRowCreated = false;
+        if(hk_pd__castersElementHasValue(race, casterIdx)) {
+            for(cmdIdx = 0; cmdIdx < hk_pd__promptsSize; cmdIdx += 1) {
+                if (hk_pd__promptsElementHasValue(race, casterIdx, cmdIdx)) {
+                    casterUnitIconSrc = hk_pd__prompts[race][casterIdx][cmdIdx].casterUnitIconSrc;
+                    casterUnitTxt = hk_pd__prompts[race][casterIdx][cmdIdx].casterUnitTxt;
+                    casterUnitId = hk_pd__prompts[race][casterIdx][cmdIdx].casterUnitId;
+
+                    trainedUnitIconSrc = hk_pd__prompts[race][casterIdx][cmdIdx].abilityIconSrc;
+                    trainedUnitTxt = hk_pd__prompts[race][casterIdx][cmdIdx].promptTargetTxt;
+                    trainedUnitId = hk_pd__prompts[race][casterIdx][cmdIdx].producedUnitId;
+
+                    // Unit column
+                    if (!casterRowCreated){
+                        populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, unitColumnWidth, rowCellHeight, casterUnitIconSrc, casterUnitTxt);
+                        runningOffsetY += rowCellHeight;
+                        casterRowCreated = true;
+                    }
+                    populateCellWithIconAndTextIndented(dialog, runningOffsetX, runningOffsetY, unitColumnWidth, rowCellHeight, trainedUnitIconSrc, trainedUnitTxt, indentationWidth);
+                    runningOffsetX += unitColumnWidth;
+
+                    // Accuracy column
+                    attempts = bk__getValueAsInt(bk__hotkeysProductionPrefix + trainedUnitId, bk__currentSessionAttempts);
+                    totalAttempts += attempts;
+                    failures = bk__getValueAsInt(bk__hotkeysProductionPrefix + trainedUnitId, bk__currentSessionFailures);
+                    totalFailures += failures;
+                    successes = attempts - failures;
+                    totalSuccesses += successes;
+                    accuracyScore = 100;
+                    if (attempts > 0) {
+                        accuracyScore = FixedToInt(Round((IntToFixed(successes) / IntToFixed(attempts)) * 100));
+                    }
+
+                    // full-width example: "100% (999999/999999)"
+                    populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(successes, attempts, accuracyScore));
+                    runningOffsetX += accuracyColumnWidth;
+
+                    // Delay column
+                    delay = bk__getValueAsFixed(bk__hotkeysProductionPrefix + trainedUnitId, bk__currentSessionDelay);
+                    totalDelay += delay;
+
+                    // full-width example: "99.99s"
+                    populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(delay, successes));
+                    runningOffsetX += delayColumnWidth;
+
+                    runningOffsetY += rowCellHeight;
+                    runningOffsetX = dialogBaseLeftPadding;
+                }
+            }
+        }
+    }
+
+    // bottom line
+    createHorizontalRule(dialog, runningOffsetX, runningOffsetY, tableWidth, 4);
+    runningOffsetY += headerCellHeight;
+
+    // Structure column
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, unitColumnWidth, rowCellHeight, null, StringToText("Total"));
+    runningOffsetX += unitColumnWidth;
+
+    // Accuracy column
+    totalAccuracyScore = 100;
+    if (totalAttempts > 0) {
+        totalAccuracyScore = FixedToInt(Round((IntToFixed(totalSuccesses) / IntToFixed(totalAttempts)) * 100));
+    }
+
+    // full-width example: "100% (999999/999999)"
+    populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(totalSuccesses, totalAttempts, totalAccuracyScore));
+    runningOffsetX += accuracyColumnWidth;
+
+    // Delay column
+    if (totalSuccesses > 0) {
+        totalAvgDelay = totalDelay / totalSuccesses;
+    }
+
+    // full-width example: "99.99s"
+    populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(totalAvgDelay, totalSuccesses));
+    runningOffsetX += delayColumnWidth;
+
+
+    // bottom buttons
+    runningOffsetY = dialogBaseBottomPadding;
+    runningOffsetX = dialogBaseLeftPadding;
+
+    dg__scoreModeLatestBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Latest"), null);
+    if (dg__scoreMode == dg__scoreModeLatest) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
+    runningOffsetX += modeButtonWidth;
+
+    dg__scoreModeProgressBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Progress"), null);
+    if (dg__scoreMode == dg__scoreModeProgress) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
+    runningOffsetX += modeButtonWidth;
+
+    dg__scoreModeAllTimeBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("All Time"), null);
+    if (dg__scoreMode == dg__scoreModeAllTime) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
+    runningOffsetX += modeButtonWidth;
 
 
     return DialogLastCreated();
@@ -331,7 +512,10 @@ void dg_hk__onSelectionChangedHotkeyModePulldown(int dialogCtrlId) {
 
     if (dg__trainingArea == dg__trainingAreaHotkeys) {
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures) {
-            dg_hk__createScoresDialog(dg__raceSelection);
+            dg_hk__createStructuresScoresDialog(dg__raceSelection);
+        }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction) {
+            dg_hk__createProductionScoresDialog(dg__raceSelection);
         }
     }
 }
@@ -341,6 +525,10 @@ void dg_hk__onClickBeginBtn() {
     if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures){
         DialogDestroy(selectTrainingModeDialog);
         hk_st__begin(dg__raceSelection);
+    }
+    if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction){
+        DialogDestroy(selectTrainingModeDialog);
+        hk_pd__begin(dg__raceSelection);
     }
 }
 
@@ -367,6 +555,13 @@ static void populateCellWithIconAndText (int dialog, int xOfs, int yOfs, int cel
     libNtve_gf_CreateDialogItemLabel(DialogLastCreated(), textWidth, textHeight, c_anchorTopLeft, runningOffsetX, runningOffsetY, cellText, ColorWithAlpha(0,0,0,0), false, 0.0);
     libNtve_gf_SetDialogItemStyle(DialogControlLastCreated(), "StandardText12", PlayerGroupAll());
     DialogControlSetVisible(DialogControlLastCreated(), PlayerGroupAll(), true);
+}
+
+static void populateCellWithIconAndTextIndented (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, string iconSrc, text cellText, int indentationWidth) {
+    int indentedXOfs = xOfs + indentationWidth;
+    int indentedCellWidth = cellWidth - indentationWidth;
+
+    populateCellWithIconAndText (dialog, indentedXOfs, yOfs, indentedCellWidth, cellHeight, iconSrc, cellText);
 }
 
 static void populateCellWithText (int dialog, int xOfs, int yOfs, int cellWidth, int cellHeight, text cellText) {
@@ -445,13 +640,13 @@ static int hotkeyModeInt(string str) {
     if (str == "Structures") {
         return 0;
     }
-    if (str == "Production") {
+    if (str == "Unit Production") {
         return 0;
     }
     if (str == "Abilities") {
         return 0;
     }
-    if (str == "Upgrades") {
+    if (str == "Upgrades/Research") {
         return 0;
     }
     return -1;
@@ -462,13 +657,13 @@ static string hotkeyModeStr(int integer) {
         return "Structures";
     }
     if (integer == 1) {
-        return "Production";
+        return "Unit Production";
     }
     if (integer == 2) {
         return "Abilities";
     }
     if (integer == 3) {
-        return "Upgrades";
+        return "Upgrades/Research";
     }
     return null;
 }

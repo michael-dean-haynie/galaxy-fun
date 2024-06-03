@@ -2,37 +2,36 @@
 // STRUCTS
 //////////////////////////////////////////////////////////////////
 
+struct hk__caster
+{
+    string unitId;
+    string ability;
+};
+
 //////////////////////////////////////////////////////////////////
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
-int dg_hk__hotkeyModeStructures = 0;
-int dg_hk__hotkeyModeProduction = 1;
-int dg_hk__hotkeyModeAbilities = 2;
-int dg_hk__hotkeyModeUpgrades = 3;
+const int hk_pd__castersSize = 5;
+hk__caster[RACE_COUNT][hk_pd__castersSize] hk_pd__casters;
 
+const int hk_pd__promptsSize= 30;
+hk__prompt[RACE_COUNT][hk_pd__castersSize][hk_pd__promptsSize] hk_pd__prompts;
 
 //////////////////////////////////////////////////////////////////
 // VARIABLES
 //////////////////////////////////////////////////////////////////
 
-int dg_hk_beginBtn;
-
-int dg_hk__hotkeyModePulldown;
-int dg_hk__hotkeyMode;
-
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////
 
-void dg_hk__init();
+void hk_pd__init();
 
-void dg_hk__createSelectTrainingModeDialog();
+void hk_pd__begin(int race);
+void hk_pd__stop();
 
-int dg_hk__createHotkeyPromptDialog(string headingStr, text structureTxt, string iconStr);
+void hk_pd__onUnitIsCreated(unit triggeringUnit, string triggeringAbil);
 
-int dg_hk__createStructuresScoresDialog(int race);
-int dg_hk__createProductionScoresDialog(int race);
-
-void dg_hk__onSelectionChangedHotkeyModePulldown(int dialogCtrlId);
-void dg_hk__onClickBeginBtn();
+bool hk_pd__castersElementHasValue(int race, int caster);
+bool hk_pd__promptsElementHasValue(int race, int caster, int command);

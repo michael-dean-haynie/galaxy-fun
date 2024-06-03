@@ -4,10 +4,14 @@
 
 struct hk__prompt
 {
-    string instruction; // "Build Structure"
-    text targetTxt; // "Factory"
-    string icon; // "Assets\\Textures\\btn-building-terran-factory.dds"
-    string targetUnitId;
+    string promptInstruction; // "Build Structure"
+    text promptTargetTxt; // "Factory"
+    string abilityIconSrc; // "Assets\\Textures\\btn-building-terran-factory.dds"
+    string producedUnitId;
+    fixed producedUnitTime;
+    string casterUnitId;
+    string casterUnitIconSrc;
+    text casterUnitTxt;
 };
 
 //////////////////////////////////////////////////////////////////

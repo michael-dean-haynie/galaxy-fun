@@ -48,7 +48,7 @@ void hk_st__begin(int raceIdx) {
     TechTreeRequirementsEnable(1, false);
     PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 999999);
     PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
-    // PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 200.0); // not working?
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 200.0);
 
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
@@ -70,7 +70,7 @@ void hk_st__stop() {
     TechTreeRequirementsEnable(1, true);
     PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 0);
     PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 0);
-    // PlayerModifyPropertyFixed(1, c_playerPropSuppliesLimit, c_playerPropOperSetTo, 0.0); // not working?
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 0.0);
 
     // show resources again
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, true);
@@ -107,7 +107,7 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
     int cmdIdx = RandomInt(0, 29);
     
     // random abilcmd
-    while(hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].instruction == null) {
+    while(hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].promptInstruction == null) {
         cmdIdx = RandomInt(0, 29);
     }
     activeHotkeyPromptRaceIdx = raceIdx;
@@ -118,9 +118,9 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
         DialogDestroy(activeHotkeyPromptDialog);
     }
     activeHotkeyPromptDialog = dg_hk__createHotkeyPromptDialog(
-        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].instruction,
-        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetTxt,
-        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].icon
+        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].promptInstruction,
+        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].promptTargetTxt,
+        hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].abilityIconSrc
     );
 
     // track response time
@@ -143,11 +143,11 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
     UnitIssueOrder(activeHotkeyPromptUnit, Order(AbilityCommand("stop", 0)), c_orderQueueReplace);
 
     // gas (if needed)
-    if (gasPropUnit != null && hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId != GAS_STRUCTURE_IDS[raceIdx]) {
+    if (gasPropUnit != null && hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].producedUnitId != GAS_STRUCTURE_IDS[raceIdx]) {
         UnitRemove(gasPropUnit);
         gasPropUnit = null;
     }
-    if (gasPropUnit == null && hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId == GAS_STRUCTURE_IDS[raceIdx]) {
+    if (gasPropUnit == null && hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].producedUnitId == GAS_STRUCTURE_IDS[raceIdx]) {
         libNtve_gf_CreateUnitsAtPoint2(1, GAS_UNIT_ID, c_unitCreateIgnorePlacement, 1,PointWithOffset(PointFromName("hotkeytraining_structure_location"), -1, 0) );
         gasPropUnit = UnitLastCreated();
     }
@@ -174,14 +174,14 @@ void promptUserForBuildStructureHotkey(int raceIdx) {
 
 void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
     string unitType = UnitGetType(triggeringUnit);
-    string structureId = hk_st__buildHotkeyPrompts[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId;
+    string structureId = hk_st__buildHotkeyPrompts[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].producedUnitId;
 
     if (triggeringAbil != BUILD_ABILITY_IDS[activeHotkeyPromptRaceIdx]) {
         return; // unit was probably created by trigger or some other way
     }
 
     // success
-    if (unitType == hk_st__buildHotkeyPrompts[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].targetUnitId) {
+    if (unitType == hk_st__buildHotkeyPrompts[activeHotkeyPromptRaceIdx][activeHotkeyPromptCmdIdx].producedUnitId) {
         bk__saveHotkeysStructuresAttempt(activeHotkeyPromptRaceIdx, structureId, true, TimerGetElapsed(activeHotkeyPromptTimer));
         promptUserForBuildStructureHotkey(activeHotkeyPromptRaceIdx);
     }
@@ -194,12 +194,12 @@ void hk_st__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
     UnitIssueOrder(triggeringUnit, Order(AbilityCommand("BuildInProgress", 0)), c_orderQueueReplace);
 
     // scores dialog
-    dg_hk__createScoresDialog(activeHotkeyPromptRaceIdx);
+    dg_hk__createStructuresScoresDialog(activeHotkeyPromptRaceIdx);
 }
 
 bool hk_st__buildHotkeyPromptHasValue(int raceIdx, int cmdIdx) {
     hk_st__init();
-    if (hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].targetUnitId != null) {
+    if (hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].producedUnitId != null) {
         return true;
     }
     return false;
@@ -275,10 +275,10 @@ static void initBuildHotkeyPrompts () {
                     buttonId = CatalogFieldValueGet(c_gameCatalogAbil, AbilityCommandGetAbility(abilCmd), "InfoArray[" + IntToString(AbilityCommandGetCommand(abilCmd)) + "].Button.DefaultButtonFace", 1);
                     iconStr = CatalogFieldValueGet(c_gameCatalogButton, buttonId, "Icon", 1);
 
-                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].instruction = BUILD_HOTKEY_PROMPT_INSTRUCTIONS[raceIdx];
-                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].targetTxt = unitNameTxt;
-                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].icon = iconStr;
-                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].targetUnitId = unitId;
+                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].promptInstruction = BUILD_HOTKEY_PROMPT_INSTRUCTIONS[raceIdx];
+                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].promptTargetTxt = unitNameTxt;
+                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].abilityIconSrc = iconStr;
+                    hk_st__buildHotkeyPrompts[raceIdx][AbilityCommandGetCommand(abilCmd)].producedUnitId = unitId;
 
                 }
             }

@@ -99,11 +99,15 @@ void unitIsCreated_Init () {
 }
 
 bool tr__unitIsCreated_Func (bool testConds, bool runActions) {
-    if (!runActions) {
-        return true;
-    }
 
-    hk_st__onUnitIsCreated(EventUnitCreatedUnit(), EventUnitCreatedAbil());
+    if (dg__trainingArea == dg__trainingAreaHotkeys) {
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures) {
+            hk_st__onUnitIsCreated(EventUnitCreatedUnit(), EventUnitCreatedAbil());
+        }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction) {
+            hk_pd__onUnitIsCreated(EventUnitCreatedUnit(), EventUnitCreatedAbil());
+        }
+    }
 
     return true;
 }
@@ -117,10 +121,6 @@ void dialogControlClicked_Init () {
 
 bool tr__dialogControlClicked_Func (bool testConds, bool runActions) {
     int dialogCtrlId = EventDialogControl();
-
-    if (!runActions) {
-        return true;
-    }
 
     if (dialogCtrlId == dg__trainingAreaHotkeysBtn) {
         dg__onClickTrainingAreaHotkeysBtn();
@@ -149,10 +149,6 @@ void dialogControlSelectionChanged_Init () {
 
 bool tr__dialogControlSelectionChanged_Func (bool testConds, bool runActions) {
     int dialogCtrlId = EventDialogControl();
-
-    if (!runActions) {
-        return true;
-    }
 
     if (dialogCtrlId == dg__racePulldown) {
         dg__onSelectionChangedRacePulldown(dialogCtrlId);

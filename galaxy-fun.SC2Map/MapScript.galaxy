@@ -63,32 +63,12 @@ void gt_initialization_Init () {
 //--------------------------------------------------------------------------------------------------
 bool gt_codegeneration_Func (bool testConds, bool runActions) {
     // Automatic Variable Declarations
-    // Conditions
-    if (testConds) {
-        if (!((EventUnitCreatedAbil() == "TerranBuild"))) {
-            return false;
-        }
-
-        if (!((EventUnit() == null))) {
-            return false;
-        }
-
-        if (!((EventUnitAbility() == AbilityCommand("TerranBuild", 1)))) {
-            return false;
-        }
-    }
-
     // Actions
     if (!runActions) {
         return true;
     }
 
-    libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), false, PlayerGroupAll());
-    UISetResourceVisible(PlayerGroupAll(), c_resourceTypeMinerals, false);
-    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
-    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
-    libNtve_gf_DisplayScreenButton(7, StringExternal("Param/Value/FBBE1A32"), 250, 60, c_anchorBottomLeft, 20, 380, gt_codegeneration);
-    PlayerSetRace(1, "Terr");
+    UnitSetProgressComplete(EventUnitProgressUnit(), 1, 100);
     return true;
 }
 
@@ -96,8 +76,7 @@ bool gt_codegeneration_Func (bool testConds, bool runActions) {
 void gt_codegeneration_Init () {
     gt_codegeneration = TriggerCreate("gt_codegeneration_Func");
     TriggerEnable(gt_codegeneration, false);
-    TriggerAddEventUnitAbility(gt_codegeneration, null, null, c_unitAbilStageAll, false);
-    TriggerAddEventUnitCreated(gt_codegeneration, null, null, null);
+    TriggerAddEventUnitTrainProgress(gt_codegeneration, null, c_unitProgressStageStart);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -105,6 +84,10 @@ void gt_codegeneration_Init () {
 //--------------------------------------------------------------------------------------------------
 bool gt_buttoncallback_Func (bool testConds, bool runActions) {
     // Automatic Variable Declarations
+    unitgroup auto925C3563_g;
+    int auto925C3563_u;
+    unit auto925C3563_var;
+
     // Conditions
     if (testConds) {
         if (!((EventDialogControl() == EventDialogControl()))) {
@@ -117,6 +100,13 @@ bool gt_buttoncallback_Func (bool testConds, bool runActions) {
         return true;
     }
 
+    auto925C3563_g = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    auto925C3563_u = UnitGroupCount(auto925C3563_g, c_unitCountAll);
+    for (;; auto925C3563_u -= 1) {
+        auto925C3563_var = UnitGroupUnitFromEnd(auto925C3563_g, auto925C3563_u);
+        if (auto925C3563_var == null) { break; }
+        UnitKill(auto925C3563_var);
+    }
     TriggerDebugOutput(1, IntToText(0), true);
     return true;
 }

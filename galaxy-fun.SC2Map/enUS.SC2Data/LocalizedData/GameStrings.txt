@@ -5,4 +5,3 @@ DocInfo/Name=Just Another StarCraft II Map
 MapInfo/Player00/Name=Neutral
 MapInfo/Player01/Name=Player 1
 MapInfo/Player02/Name=Hostile
-Param/Value/FBBE1A32=Show/Hide UI

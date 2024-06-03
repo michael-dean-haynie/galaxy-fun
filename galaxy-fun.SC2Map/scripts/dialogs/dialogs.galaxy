@@ -115,7 +115,7 @@ void dg__onClickScoreModeBtn(int control) {
 
     if (dg__trainingArea == dg__trainingAreaHotkeys) {
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures) {
-            dg_hk__createScoresDialog(dg__raceSelection);
+            dg_hk__createStructuresScoresDialog(dg__raceSelection);
         }
     }
 }
@@ -126,9 +126,13 @@ void dg__onSelectionChangedRacePulldown(int control) {
 
     PlayerSetRace(1, ct__raceId(dg__raceSelection));
 
+    // TODO: un-duplicate this part in the dialogs_hotkeys file
     if (dg__trainingArea == dg__trainingAreaHotkeys) {
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures) {
-            dg_hk__createScoresDialog(dg__raceSelection);
+            dg_hk__createStructuresScoresDialog(dg__raceSelection);
+        }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction) {
+            dg_hk__createProductionScoresDialog(dg__raceSelection);
         }
     }
 }
