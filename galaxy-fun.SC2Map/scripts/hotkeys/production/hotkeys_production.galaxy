@@ -1,8 +1,23 @@
 //////////////////////////////////////////////////////////////////
+// STRUCTS
+//////////////////////////////////////////////////////////////////
+
+struct hk_pd__randoPrompt
+{
+    int raceIdx;
+    int casterIdx;
+    int cmdIdx;
+    bool hasData;
+};
+
+//////////////////////////////////////////////////////////////////
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
 static string pylonUnitId = "Pylon";
+
+const int randoPromptsSize = 30;
+static hk_pd__randoPrompt[3][randoPromptsSize] randoPrompts; // prompt index info for randomization (by race)
 
 //////////////////////////////////////////////////////////////////
 // VARIABLES
@@ -26,6 +41,7 @@ static timer activeTimer;
 // static function declarations
 static void initHotkeyPrompts ();
 static void promptUserForProductionHotkey(int race, bool doGetNewPrompt);
+static void activateRandomPrompt();
 
 void hk_pd__begin(int raceIdx) {
     int casterIdx;
@@ -69,7 +85,7 @@ void hk_pd__begin(int raceIdx) {
     promptUserForProductionHotkey(raceIdx, true);
 
     dg__inSession = true;
-    dg_hk__createStructuresScoresDialog(raceIdx);
+    dg_hk__createProductionScoresDialog(raceIdx);
 
 }
 
@@ -142,44 +158,26 @@ void hk_pd__stop() {
     dg_hk__createSelectTrainingModeDialog();
 
     dg__inSession = false;
-    dg_hk__createStructuresScoresDialog(raceIdx);
+    dg_hk__createProductionScoresDialog(raceIdx);
 }
 
 static void promptUserForProductionHotkey(int race, bool doGetNewPrompt) {
     string casterUnitId;
     string abilityId;
 
-    int caster = activeCaster;
-    int cmd = activeCmd;
-
-
-    if (doGetNewPrompt) {
-        caster = RandomInt(0, hk_pd__castersSize - 1);
-        cmd = RandomInt(0, hk_pd__promptsSize - 1);
-
-        // get valid random caster
-        while(!hk_pd__castersElementHasValue(race, caster)) {
-            caster = RandomInt(0, hk_pd__castersSize - 1);
-        }
-
-        // get valid random cmd
-        while(!hk_pd__promptsElementHasValue(race, caster, cmd)) {
-            cmd = RandomInt(0, hk_pd__promptsSize - 1);
-        }
-    }
-
-    activeCaster = caster;
-    activeCmd = cmd;
     activeRace = race;
+    if (doGetNewPrompt) {
+        activateRandomPrompt();
+    }
 
     // prompt dialog
     if (activeHotkeyPromptDialog != 0) {
         DialogDestroy(activeHotkeyPromptDialog);
     }
     activeHotkeyPromptDialog = dg_hk__createHotkeyPromptDialog(
-        hk_pd__prompts[race][caster][cmd].promptInstruction,
-        hk_pd__prompts[race][caster][cmd].promptTargetTxt,
-        hk_pd__prompts[race][caster][cmd].abilityIconSrc
+        hk_pd__prompts[activeRace][activeCaster][activeCmd].promptInstruction,
+        hk_pd__prompts[activeRace][activeCaster][activeCmd].promptTargetTxt,
+        hk_pd__prompts[activeRace][activeCaster][activeCmd].abilityIconSrc
     );
 
     // track response time
@@ -190,33 +188,45 @@ static void promptUserForProductionHotkey(int race, bool doGetNewPrompt) {
     TimerRestart(activeTimer);
 
     // caster
-    if (activeCasterUnit != null && UnitGetType(activeCasterUnit) != hk_pd__casters[race][caster].unitId) {
+    if (activeCasterUnit != null && UnitGetType(activeCasterUnit) != hk_pd__casters[activeRace][activeCaster].unitId) {
         UnitRemove(activeCasterUnit);
         activeCasterUnit = null;
     }
     if (activeCasterUnit == null) {
-        libNtve_gf_CreateUnitsAtPoint2(1, hk_pd__casters[race][caster].unitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_structure_location"));
+        libNtve_gf_CreateUnitsAtPoint2(1, hk_pd__casters[activeRace][activeCaster].unitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_structure_location"));
         activeCasterUnit = UnitLastCreated();
     }
     UnitSelect(activeCasterUnit, 1, true);
 
     // pylon (if needed)
-    if (pylonPropUnit != null && race != PROTOSS) {
+    if (pylonPropUnit != null && activeRace != PROTOSS) {
         UnitRemove(pylonPropUnit);
         pylonPropUnit = null;
     }
-    if (pylonPropUnit == null && race == PROTOSS) {
+    if (pylonPropUnit == null && activeRace == PROTOSS) {
         libNtve_gf_CreateUnitsAtPoint2(1, pylonUnitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
         pylonPropUnit = UnitLastCreated();
     }
 
     // creep (if needed)
-    if (race == ZERG) {
+    if (activeRace == ZERG) {
         CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, true, true);
     }
-    if (race != ZERG) {
+    if (activeRace != ZERG) {
         CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
     }
+}
+
+// sets active indecies for a random prompt from a flat list
+static void activateRandomPrompt() {
+    int randomIndex = RandomInt(0, randoPromptsSize - 1);
+
+    while(randoPrompts[activeRace][randomIndex].hasData == false) {
+        randomIndex = RandomInt(0, randoPromptsSize - 1);
+    }
+
+    activeCaster = randoPrompts[activeRace][randomIndex].casterIdx;
+    activeCmd = randoPrompts[activeRace][randomIndex].cmdIdx;
 }
 
 void hk_pd__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
@@ -342,10 +352,12 @@ static void initHotkeyPrompts () {
     string abilityButtonId;
     string abilityIconSrc;
 
-
     string fieldPath;
 
+    int promptsCountForRace;
+
     for (race = 0; race < RACE_COUNT; race += 1) {
+        promptsCountForRace = 0;
         for (caster = 0; caster < hk_pd__castersSize; caster += 1) {
             if (hk_pd__castersElementHasValue(race, caster)) {
                 // hopefully this always works?
@@ -389,8 +401,13 @@ static void initHotkeyPrompts () {
                             hk_pd__prompts[race][caster][command].producedUnitTime = producedUnitTime;
                             hk_pd__prompts[race][caster][command].abilityIconSrc = abilityIconSrc;
                             hk_pd__prompts[race][caster][command].promptTargetTxt = producedUnitNameTxt;
-                        }
 
+                            randoPrompts[race][promptsCountForRace].raceIdx = race;
+                            randoPrompts[race][promptsCountForRace].casterIdx = caster;
+                            randoPrompts[race][promptsCountForRace].cmdIdx = command;
+                            randoPrompts[race][promptsCountForRace].hasData = true;
+                            promptsCountForRace += 1;
+                        }
                     }
                 }
             }

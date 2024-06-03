@@ -449,6 +449,7 @@ int dg_hk__createProductionScoresDialog(int race) {
 
     string targetSession;
 
+    // single-session data variables
     int attempts;
     int failures;
     int successes;
@@ -462,6 +463,15 @@ int dg_hk__createProductionScoresDialog(int race) {
     fixed totalDelay;
     int totalDelayDivisor;
     fixed totalAvgDelay;
+
+    // comparative (progress) data variables
+    fixed accuracyProgress;
+    fixed delayProgress;
+
+    fixed totalAccuracyProgress;
+    int totalAccuracyProgressDivisor;
+    fixed totalDelayProgress;
+    int totalDelayProgressDivisor;
 
     if (dg__scoresDialog != 0) {
         DialogDestroy(dg__scoresDialog);
@@ -507,38 +517,96 @@ int dg_hk__createProductionScoresDialog(int race) {
                     trainedUnitTxt = hk_pd__prompts[race][casterIdx][cmdIdx].promptTargetTxt;
                     trainedUnitId = hk_pd__prompts[race][casterIdx][cmdIdx].producedUnitId;
 
-                    // Unit column
+                    // Caster Row
                     if (!casterRowCreated){
                         populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, unitColumnWidth, rowCellHeight, casterUnitIconSrc, casterUnitTxt);
                         runningOffsetY += rowCellHeight;
                         casterRowCreated = true;
                     }
+                    ////////////////////////////////////////////////
+                    // Unit column (for any session target)
+                    ///////////////////////////////////////////////
                     populateCellWithIconAndTextIndented(dialog, runningOffsetX, runningOffsetY, unitColumnWidth, rowCellHeight, trainedUnitIconSrc, trainedUnitTxt, indentationWidth);
                     runningOffsetX += unitColumnWidth;
 
-                    // Accuracy column
-                    attempts = bk__getValueAsInt(bk__hotkeysProductionPrefix + trainedUnitId, bk__currentSessionAttempts);
-                    totalAttempts += attempts;
-                    failures = bk__getValueAsInt(bk__hotkeysProductionPrefix + trainedUnitId, bk__currentSessionFailures);
-                    totalFailures += failures;
-                    successes = attempts - failures;
-                    totalSuccesses += successes;
-                    accuracyScore = 100;
-                    if (attempts > 0) {
-                        accuracyScore = FixedToInt(Round((IntToFixed(successes) / IntToFixed(attempts)) * 100));
+                    // score is comparative between 2 sessions (progress)
+                    if (dg__scoreMode == dg__scoreModeProgress) {
+                        ////////////////////////////////////////
+                        // Accuracy Column (for progress)
+                        ////////////////////////////////////////
+
+                        accuracyProgress = getAccuracyProgress(bk__hotkeysProductionPrefix + trainedUnitId);
+                        totalAccuracyProgress += accuracyProgress;
+                        totalAccuracyProgressDivisor += 1;
+
+                        populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracyProgress(accuracyProgress));
+                        runningOffsetX += accuracyColumnWidth;
+
+                        ////////////////////////////////////////
+                        // Delay Column (for progress)
+                        ////////////////////////////////////////
+
+                        delayProgress = getDelayProgress(bk__hotkeysProductionPrefix + trainedUnitId);
+                        totalDelayProgress += delayProgress;
+                        totalDelayProgressDivisor += 1;
+
+                        populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelayProgress(delayProgress));
+                        runningOffsetX += delayColumnWidth;
                     }
 
-                    // full-width example: "100% (999999/999999)"
-                    populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(successes, attempts, accuracyScore));
-                    runningOffsetX += accuracyColumnWidth;
+                    // score is a for a particular session
+                    else {
 
-                    // Delay column
-                    delay = bk__getValueAsFixed(bk__hotkeysProductionPrefix + trainedUnitId, bk__currentSessionDelay);
-                    totalDelay += delay;
+                        // figure out the latest session with attempts
+                        if (dg__scoreMode == dg__scoreModeLatest) {
+                            targetSession = bk__currentSession;
+                            attempts = bk__getValueAsInt(bk__hotkeysProductionPrefix + trainedUnitId, bk__currentSessionAttempts);
+                            if (attempts == 0 && dg__inSession == false) { // when not inSession, sub in data from the most recent session
+                                targetSession = bk__mostRecentSession;
+                                attempts = bk__getValueAsInt(bk__hotkeysProductionPrefix + trainedUnitId, bk__mostRecentSessionAttempts);
+                            }
+                        }
 
-                    // full-width example: "99.99s"
-                    populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(delay, successes));
-                    runningOffsetX += delayColumnWidth;
+                        // go straight to alltime data
+                        if (dg__scoreMode == dg__scoreModeAllTime) {
+                            targetSession = bk__allTime;
+                            attempts = bk__getValueAsInt(bk__hotkeysProductionPrefix + trainedUnitId, bk__allTimeAttempts);
+                        }
+
+                        totalAttempts += attempts;
+
+                        failures = bk__getValueAsInt(bk__hotkeysProductionPrefix + trainedUnitId, targetSession + bk__failures);
+                        totalFailures += failures;
+
+                        delay = bk__getValueAsFixed(bk__hotkeysProductionPrefix + trainedUnitId, targetSession + bk__delay);
+                        if (delay > 0) {
+                            totalDelay += delay;
+                            totalDelayDivisor += 1;
+                        }
+
+                        successes = attempts - failures;
+                        totalSuccesses += successes;
+
+                        ////////////////////////////////////////
+                        // Accuracy Column (for latest session)
+                        ////////////////////////////////////////
+                        accuracyScore = 100;
+                        if (attempts > 0) {
+                            accuracyScore = FixedToInt(Round((IntToFixed(successes) / IntToFixed(attempts)) * 100));
+                        }
+
+                        // full-width example: "100% (999999/999999)"
+                        populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(successes, attempts, accuracyScore));
+                        runningOffsetX += accuracyColumnWidth;
+
+                        ////////////////////////////////////////
+                        // Delay Column (for latest session)
+                        ////////////////////////////////////////
+
+                        // full-width example: "99.99s"
+                        populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(delay, successes));
+                        runningOffsetX += delayColumnWidth;
+                    }
 
                     runningOffsetY += rowCellHeight;
                     runningOffsetX = dialogBaseLeftPadding;
@@ -551,28 +619,43 @@ int dg_hk__createProductionScoresDialog(int race) {
     createHorizontalRule(dialog, runningOffsetX, runningOffsetY, tableWidth, 4);
     runningOffsetY += headerCellHeight;
 
-    // Structure column
+    // Unit column
     populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, unitColumnWidth, rowCellHeight, null, StringToText("Overall"));
     runningOffsetX += unitColumnWidth;
 
-    // Accuracy column
-    totalAccuracyScore = 100;
-    if (totalAttempts > 0) {
-        totalAccuracyScore = FixedToInt(Round((IntToFixed(totalSuccesses) / IntToFixed(totalAttempts)) * 100));
+    // score is comparative between 2 sessions (progress)
+    if (dg__scoreMode == dg__scoreModeProgress) {
+        // Accuracy column
+        populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracyProgress(totalAccuracyProgress / totalAccuracyProgressDivisor));
+        runningOffsetX += accuracyColumnWidth;
+
+        // DelayColumn
+        // full-width example: "99.99s"
+        populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelayProgress(totalDelayProgress / totalDelayProgressDivisor));
+        runningOffsetX += delayColumnWidth;
     }
 
-    // full-width example: "100% (999999/999999)"
-    populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(totalSuccesses, totalAttempts, totalAccuracyScore));
-    runningOffsetX += accuracyColumnWidth;
+    // score is a for a particular session
+    else {
+        // Accuracy column
+        totalAccuracyScore = 100;
+        if (totalAttempts > 0) {
+            totalAccuracyScore = FixedToInt(Round((IntToFixed(totalSuccesses) / IntToFixed(totalAttempts)) * 100));
+        }
 
-    // Delay column
-    if (totalSuccesses > 0) {
-        totalAvgDelay = totalDelay / totalSuccesses;
+        // full-width example: "100% (999999/999999)"
+        populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(totalSuccesses, totalAttempts, totalAccuracyScore));
+        runningOffsetX += accuracyColumnWidth;
+
+        // Delay column
+        if (totalSuccesses > 0) {
+            totalAvgDelay = totalDelay / totalDelayDivisor;
+        }
+
+        // full-width example: "99.99s"
+        populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(totalAvgDelay, totalSuccesses));
+        runningOffsetX += delayColumnWidth;
     }
-
-    // full-width example: "99.99s"
-    populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(totalAvgDelay, totalSuccesses));
-    runningOffsetX += delayColumnWidth;
 
 
     // bottom buttons
