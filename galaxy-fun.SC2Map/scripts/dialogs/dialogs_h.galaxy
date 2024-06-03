@@ -30,6 +30,8 @@ int dg__trainingArea;
 int dg__racePulldown;
 int dg__raceSelection;
 
+bool dg__inSession = false; // whether the user is currently in a training session (affects scores dialog)
+
 //////////////////////////////////////////////////////////////////
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////

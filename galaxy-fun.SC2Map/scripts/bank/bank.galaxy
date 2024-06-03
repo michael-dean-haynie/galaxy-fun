@@ -145,10 +145,10 @@ void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool atte
 
     if (attemptWasSuccessful) {
         // update delays
-        newAllTimeDelay = ((existingAllTimeSuccesses * existingAllTimeDelay) + delay) / (existingAllTimeAttempts + 1);
+        newAllTimeDelay = ((existingAllTimeSuccesses * existingAllTimeDelay) + delay) / (existingAllTimeSuccesses + 1);
         BankValueSetFromFixed(ctgBank, sectionName, bk__allTimeDelay, newAllTimeDelay);
 
-        newCurrentSessionDelay = ((existingCurrentSessionSuccesses * existingCurrentSessionDelay) + delay) / (existingCurrentSessionAttempts + 1);
+        newCurrentSessionDelay = ((existingCurrentSessionSuccesses * existingCurrentSessionDelay) + delay) / (existingCurrentSessionSuccesses + 1);
         BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, newCurrentSessionDelay);
     }
     else {
@@ -226,8 +226,9 @@ void bk__init() {
     string unitId;
     string sectionName;
 
-    int i;
+    // for future projects - REMEMBER TO SET UP BANK PRELOADING IN THE EDITOR MENUS (map > preload info > banks)
 
+    // int i;
     // dbg("bank exists before load: " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
     ctgBank = BankLoad("cadenzastrainingground", 1);
     // dbg("bank exists after load: " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
@@ -241,13 +242,11 @@ void bk__init() {
     // dbg("bank exists after BankWait(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
     // Wait(1.0, c_timeReal);
     // dbg("bank exists after Wait(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
-
-    
-    dbg("BankSectionCount(): " + IntToString(BankSectionCount(ctgBank)));
-
-    for(i = 0; i < BankSectionCount(ctgBank); i += 1) {
-        dbg("BankSectionName(" + IntToString(i) + "): " + BankSectionName(ctgBank, i));
-    }
+    // 
+    // dbg("BankSectionCount(): " + IntToString(BankSectionCount(ctgBank)));
+    // for(i = 0; i < BankSectionCount(ctgBank); i += 1) {
+    //     dbg("BankSectionName(" + IntToString(i) + "): " + BankSectionName(ctgBank, i));
+    // }
 
     hk_st__init(); // make sure constants have been initialized
     for(raceIdx = 0; raceIdx < RACE_COUNT; raceIdx += 1) {

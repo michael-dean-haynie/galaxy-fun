@@ -56,6 +56,9 @@ void hk_st__begin(int raceIdx) {
     libNtve_gf_HideScreenButton(true, sb__stopBtn);
 
     promptUserForBuildStructureHotkey(raceIdx);
+
+    dg__inSession = true;
+    dg_hk__createStructuresScoresDialog(raceIdx);
 }
 
 void hk_st__stop() {
@@ -98,6 +101,9 @@ void hk_st__stop() {
     CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
 
     dg_hk__createSelectTrainingModeDialog();
+
+    dg__inSession = false;
+    dg_hk__createStructuresScoresDialog(activeHotkeyPromptRaceIdx);
 }
 
 void promptUserForBuildStructureHotkey(int raceIdx) {

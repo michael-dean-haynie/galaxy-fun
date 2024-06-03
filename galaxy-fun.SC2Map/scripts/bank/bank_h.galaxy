@@ -6,18 +6,19 @@
 // CONSTANTS
 //////////////////////////////////////////////////////////////////
 
-const string bk__hotkeysStructuresPrefix = "hotkeys.structures.";
-const string bk__hotkeysProductionPrefix = "hotkeys.production.";
+string bk__hotkeysStructuresPrefix = "hotkeys.structures.";
+string bk__hotkeysProductionPrefix = "hotkeys.production.";
 
-const string bk__currentSession = "currentSession";
-const string bk__mostRecentSession = "mostRecentSession";
-const string bk__allTime = "allTime";
+string bk__currentSession = "currentSession";
+string bk__mostRecentSession = "mostRecentSession";
+string bk__allTime = "allTime";
 
-const string bk__attempts = "Attempts";
-const string bk__failures = "Failures";
-const string bk__delay = "Delay";
+string bk__attempts = "Attempts";
+string bk__failures = "Failures";
+string bk__delay = "Delay";
 
 // can't do this for some reason -- debugger shows them as null
+// k - it has to do with the strings being constants I guess. just removing const seems to make it work
 // const string bk__allTimeAttempts = bk__allTime + bk__attempts;
 
 const string bk__allTimeAttempts = "allTimeAttempts";
