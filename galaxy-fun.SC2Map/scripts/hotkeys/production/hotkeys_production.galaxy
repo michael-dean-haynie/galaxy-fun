@@ -37,6 +37,10 @@ void hk_pd__begin(int raceIdx) {
     // start fresh with bank data
     bk__startHotkeysProductionSession(raceIdx);
 
+    // Remove Techtree Requirements
+    TechTreeRequirementsEnable(1, false); // disabling requirements for units
+    TechTreeRestrictionsEnable(1, true); // enabling restrictions
+
     // temp eliminate training time
     for(casterIdx = 0; casterIdx < hk_pd__castersSize; casterIdx += 1) {
         if(hk_pd__castersElementHasValue(raceIdx, casterIdx)) {
@@ -44,14 +48,16 @@ void hk_pd__begin(int raceIdx) {
                 if (hk_pd__promptsElementHasValue(raceIdx, casterIdx, cmdIdx)) {
                     abilityId = hk_pd__casters[raceIdx][casterIdx].ability;
                     fieldPath = "InfoArray[" + IntToString(cmdIdx) + "].Time";
+
                     CatalogFieldValueSet(c_gameCatalogAbil, abilityId, fieldPath, 1, FixedToString(0.0, 2));
+                    TechTreeAbilityAllow(1, AbilityCommand(abilityId, cmdIdx), true); // explicitly allowing ability
                 }
             }
         }
     }
     
-    // Remove Techtree Requirements / set resources / supply
-    TechTreeRequirementsEnable(1, false);
+    
+    // resources / supply
     PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 999999);
     PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
     PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 200.0);
@@ -75,11 +81,6 @@ void hk_pd__stop() {
 
     DialogDestroy(activeHotkeyPromptDialog);
 
-    // re-enable techtree requirements
-    TechTreeRequirementsEnable(1, true);
-    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 0);
-    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 0);
-    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 0.0);
 
     // reset training time
     for(casterIdx = 0; casterIdx < hk_pd__castersSize; casterIdx += 1) {
@@ -89,11 +90,22 @@ void hk_pd__stop() {
                     abilityId = hk_pd__casters[raceIdx][casterIdx].ability;
                     originalTime = hk_pd__prompts[raceIdx][casterIdx][cmdIdx].producedUnitTime;
                     fieldPath = "InfoArray[" + IntToString(cmdIdx) + "].Time";
+
                     CatalogFieldValueSet(c_gameCatalogAbil, abilityId, fieldPath, 1, FixedToString(originalTime, 2));
+                    TechTreeAbilityAllow(1, AbilityCommand(abilityId, cmdIdx), false); // removing explicity allow
                 }
             }
         }
     }
+
+    // re-enable techtree requirements
+    TechTreeRequirementsEnable(1, true); // enabling requirements
+    TechTreeRestrictionsEnable(1, false); // disabling restrictions
+
+    // resources / supply
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 0.0);
 
     // show resources again
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, true);
