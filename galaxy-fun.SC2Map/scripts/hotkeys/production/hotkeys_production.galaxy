@@ -79,8 +79,11 @@ void hk_pd__stop() {
     string abilityId;
     fixed originalTime;
 
-    DialogDestroy(activeHotkeyPromptDialog);
+    unitgroup ug;
+    int ugCount;
+    unit ugUnit;
 
+    DialogDestroy(activeHotkeyPromptDialog);
 
     // reset training time
     for(casterIdx = 0; casterIdx < hk_pd__castersSize; casterIdx += 1) {
@@ -111,11 +114,18 @@ void hk_pd__stop() {
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, true);
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, true);
 
-    // remove caster
-    if (activeCasterUnit != null) {
-        UnitRemove(activeCasterUnit);
-        activeCasterUnit = null;
+    // just kill everything in that general area (blame zerg weird morphing unit complexity)
+    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    ugCount = UnitGroupCount(ug, c_unitCountAll);
+    for (;; ugCount -= 1) {
+        ugUnit = UnitGroupUnitFromEnd(ug, ugCount);
+        if (ugUnit == null) { break; }
+        if (UnitGetType(ugUnit) == pylonUnitId) {
+            continue;
+        }
+        UnitKill(ugUnit);
     }
+    activeCasterUnit = null;
 
     // remove pylon (if needed)
     if (pylonPropUnit != null) {
@@ -238,7 +248,6 @@ void hk_pd__onUnitIsCreated(unit triggeringUnit, string triggeringAbil) {
         }
         UnitKill(ugUnit);
     }
-
     activeCasterUnit = null;
 
     // scores dialog

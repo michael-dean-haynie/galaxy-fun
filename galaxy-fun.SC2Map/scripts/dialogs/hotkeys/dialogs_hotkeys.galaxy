@@ -182,6 +182,8 @@ int dg_hk__createStructuresScoresDialog(int race) {
     int runningOffsetX = dialogBaseLeftPadding;
     int runningOffsetY = dialogBaseTopPadding;
 
+    string targetSession;
+
     int attempts;
     int failures;
     int successes;
@@ -193,6 +195,7 @@ int dg_hk__createStructuresScoresDialog(int race) {
     int totalSuccesses;
     int totalAccuracyScore;
     fixed totalDelay;
+    int totalDelayDivisor;
     fixed totalAvgDelay;
 
     if (dg__scoresDialog != 0) {
@@ -233,33 +236,70 @@ int dg_hk__createStructuresScoresDialog(int race) {
             structureText = hk_st__buildHotkeyPrompts[race][cmdIdx].promptTargetTxt;
             structureId = hk_st__buildHotkeyPrompts[race][cmdIdx].producedUnitId;
 
-            // Structure column
+            ////////////////////////////////////////////////
+            // Structure Column (for any session target)
+            ///////////////////////////////////////////////
             populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, structureColumnWidth, rowCellHeight, structureIconSrc, structureText);
             runningOffsetX += structureColumnWidth;
 
-            // Accuracy column
-            attempts = bk__getValueAsInt(bk__hotkeysStructuresPrefix + structureId, bk__currentSessionAttempts);
-            totalAttempts += attempts;
-            failures = bk__getValueAsInt(bk__hotkeysStructuresPrefix + structureId, bk__currentSessionFailures);
-            totalFailures += failures;
-            successes = attempts - failures;
-            totalSuccesses += successes;
-            accuracyScore = 100;
-            if (attempts > 0) {
-                accuracyScore = FixedToInt(Round((IntToFixed(successes) / IntToFixed(attempts)) * 100));
+            // score is comparative between 2 sessions
+            if (dg__scoreMode == dg__scoreModeProgress) {
+
             }
 
-            // full-width example: "100% (999999/999999)"
-            populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(successes, attempts, accuracyScore));
-            runningOffsetX += accuracyColumnWidth;
+            // score is a for a particular session
+            else {
 
-            // Delay column
-            delay = bk__getValueAsFixed(bk__hotkeysStructuresPrefix + structureId, bk__currentSessionDelay);
-            totalDelay += delay;
+                // figure out the latest session with attempts
+                if (dg__scoreMode == dg__scoreModeLatest) {
+                    targetSession = bk__currentSession;
+                    attempts = bk__getValueAsInt(bk__hotkeysStructuresPrefix + structureId, bk__currentSessionAttempts);
+                    if (attempts == 0) {
+                        targetSession = bk__mostRecentSession;
+                        attempts = bk__getValueAsInt(bk__hotkeysStructuresPrefix + structureId, bk__mostRecentSessionAttempts);
+                    }
+                }
 
-            // full-width example: "99.99s"
-            populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(delay, successes));
-            runningOffsetX += delayColumnWidth;
+                // go straight to alltime data
+                if (dg__scoreMode == dg__scoreModeAllTime) {
+                    targetSession = bk__allTime;
+                    attempts = bk__getValueAsInt(bk__hotkeysStructuresPrefix + structureId, bk__allTimeAttempts);
+                }
+
+                totalAttempts += attempts;
+
+                failures = bk__getValueAsInt(bk__hotkeysStructuresPrefix + structureId, targetSession + bk__failures);
+                totalFailures += failures;
+
+                delay = bk__getValueAsFixed(bk__hotkeysStructuresPrefix + structureId, targetSession + bk__delay);
+                if (delay > 0) {
+                    totalDelay += delay;
+                    totalDelayDivisor += 1;
+                }
+
+                successes = attempts - failures;
+                totalSuccesses += successes;
+
+                ////////////////////////////////////////
+                // Accuracy Column (for latest session)
+                ////////////////////////////////////////
+                accuracyScore = 100;
+                if (attempts > 0) {
+                    accuracyScore = FixedToInt(Round((IntToFixed(successes) / IntToFixed(attempts)) * 100));
+                }
+
+                // full-width example: "100% (999999/999999)"
+                populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(successes, attempts, accuracyScore));
+                runningOffsetX += accuracyColumnWidth;
+
+                ////////////////////////////////////////
+                // Delay Column (for latest session)
+                ////////////////////////////////////////
+
+                // full-width example: "99.99s"
+                populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(delay, successes));
+                runningOffsetX += delayColumnWidth;
+            }
 
             runningOffsetY += rowCellHeight;
             runningOffsetX = dialogBaseLeftPadding;
@@ -286,7 +326,7 @@ int dg_hk__createStructuresScoresDialog(int race) {
 
     // Delay column
     if (totalSuccesses > 0) {
-        totalAvgDelay = totalDelay / totalSuccesses;
+        totalAvgDelay = totalDelay / totalDelayDivisor;
     }
 
     // full-width example: "99.99s"

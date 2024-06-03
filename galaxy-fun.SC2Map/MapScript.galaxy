@@ -68,7 +68,9 @@ bool gt_codegeneration_Func (bool testConds, bool runActions) {
         return true;
     }
 
+    TechTreeUpgradeAllow(1, "WarpGateResearch", false);
     UnitSetProgressComplete(EventUnitProgressUnit(), 1, 100);
+    TechTreeAbilityAllow(1, AbilityCommand("UpgradeToWarpGate", 0), true);
     return true;
 }
 

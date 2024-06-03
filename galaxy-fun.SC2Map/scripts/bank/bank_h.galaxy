@@ -9,6 +9,17 @@
 const string bk__hotkeysStructuresPrefix = "hotkeys.structures.";
 const string bk__hotkeysProductionPrefix = "hotkeys.production.";
 
+const string bk__currentSession = "currentSession";
+const string bk__mostRecentSession = "mostRecentSession";
+const string bk__allTime = "allTime";
+
+const string bk__attempts = "Attempts";
+const string bk__failures = "Failures";
+const string bk__delay = "Delay";
+
+// can't do this for some reason -- debugger shows them as null
+// const string bk__allTimeAttempts = bk__allTime + bk__attempts;
+
 const string bk__allTimeAttempts = "allTimeAttempts";
 const string bk__allTimeFailures = "allTimeFailures";
 const string bk__allTimeDelay = "allTimeDelay";

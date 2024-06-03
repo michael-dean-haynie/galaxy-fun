@@ -218,7 +218,9 @@
     <Element Type="Trigger" Id="FB83A08D">
         <InitOff/>
         <Event Type="FunctionCall" Id="BC84B4EB"/>
+        <Action Type="FunctionCall" Id="239CDA85"/>
         <Action Type="FunctionCall" Id="BC364A9B"/>
+        <Action Type="FunctionCall" Id="AEEE738F"/>
     </Element>
     <Element Type="FunctionCall" Id="BC84B4EB">
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="82E80323"/>
@@ -232,6 +234,27 @@
     <Element Type="Param" Id="E35C4103">
         <ParameterDef Type="ParamDef" Library="Ntve" Id="DD4FFE3C"/>
         <Preset Type="PresetValue" Library="Ntve" Id="00000058"/>
+    </Element>
+    <Element Type="FunctionCall" Id="239CDA85">
+        <FunctionDef Type="FunctionDef" Library="Ntve" Id="0B0A4FBE"/>
+        <Parameter Type="Param" Id="1705C3B8"/>
+        <Parameter Type="Param" Id="A52B780E"/>
+        <Parameter Type="Param" Id="69CC3409"/>
+    </Element>
+    <Element Type="Param" Id="1705C3B8">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="082DE673"/>
+        <Value>1</Value>
+        <ValueType Type="int"/>
+    </Element>
+    <Element Type="Param" Id="A52B780E">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="87723663"/>
+        <Preset Type="PresetValue" Library="Ntve" Id="00000107"/>
+    </Element>
+    <Element Type="Param" Id="69CC3409">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="44F827BC"/>
+        <Value>WarpGateResearch</Value>
+        <ValueType Type="gamelink"/>
+        <ValueGameType Type="Upgrade"/>
     </Element>
     <Element Type="FunctionCall" Id="BC364A9B">
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="25FDDB2A"/>
@@ -255,6 +278,26 @@
         <ParameterDef Type="ParamDef" Library="Ntve" Id="E7F1F6D7"/>
         <Value>100</Value>
         <ValueType Type="int"/>
+    </Element>
+    <Element Type="FunctionCall" Id="AEEE738F">
+        <FunctionDef Type="FunctionDef" Library="Ntve" Id="0F7C3248"/>
+        <Parameter Type="Param" Id="FD3AA15D"/>
+        <Parameter Type="Param" Id="95857205"/>
+        <Parameter Type="Param" Id="6891A94D"/>
+    </Element>
+    <Element Type="Param" Id="FD3AA15D">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="BFF56EB0"/>
+        <Value>1</Value>
+        <ValueType Type="int"/>
+    </Element>
+    <Element Type="Param" Id="95857205">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="09B7BAEA"/>
+        <Preset Type="PresetValue" Library="Ntve" Id="00000106"/>
+    </Element>
+    <Element Type="Param" Id="6891A94D">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="9B01128C"/>
+        <Value>UpgradeToWarpGate</Value>
+        <ValueType Type="abilcmd"/>
     </Element>
     <Element Type="Trigger" Id="56EA3A5E">
         <InitOff/>

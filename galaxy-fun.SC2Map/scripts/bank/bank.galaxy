@@ -90,24 +90,22 @@ void bk__startHotkeysProductionSession(int raceInt) {
     ctgBank = BankLoad("cadenzastrainingground", 1);
 
     hk_pd__init(); // make sure constants have been initialized
-    for(raceInt = 0; raceInt < RACE_COUNT; raceInt += 1) {
-        for(casterIdx = 0; casterIdx < hk_pd__castersSize; casterIdx += 1) {
-            if(hk_pd__castersElementHasValue(raceInt, casterIdx)) {
-                for(cmdIdx = 0; cmdIdx < hk_pd__promptsSize; cmdIdx += 1) {
-                    if (hk_pd__promptsElementHasValue(raceInt, casterIdx, cmdIdx)) {
-                        unitId = hk_pd__prompts[raceInt][casterIdx][cmdIdx].producedUnitId;
-                        sectionName = bk__hotkeysProductionPrefix + unitId;
+    for(casterIdx = 0; casterIdx < hk_pd__castersSize; casterIdx += 1) {
+        if(hk_pd__castersElementHasValue(raceInt, casterIdx)) {
+            for(cmdIdx = 0; cmdIdx < hk_pd__promptsSize; cmdIdx += 1) {
+                if (hk_pd__promptsElementHasValue(raceInt, casterIdx, cmdIdx)) {
+                    unitId = hk_pd__prompts[raceInt][casterIdx][cmdIdx].producedUnitId;
+                    sectionName = bk__hotkeysProductionPrefix + unitId;
 
-                        // move "current" data from last session to "most recent session", and start fresh for this session
-                        if (BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts) > 0) {
-                            BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionAttempts, BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts));
-                            BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionFailures, BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionFailures));
-                            BankValueSetFromFixed(ctgBank, sectionName, bk__mostRecentSessionDelay, BankValueGetAsFixed(ctgBank, sectionName, bk__currentSessionDelay));
-                            BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionAttempts, 0);
-                            BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionFailures, 0);
-                            BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, 0.0);
-                            BankSave(ctgBank);
-                        }
+                    // move "current" data from last session to "most recent session", and start fresh for this session
+                    if (BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts) > 0) {
+                        BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionAttempts, BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts));
+                        BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionFailures, BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionFailures));
+                        BankValueSetFromFixed(ctgBank, sectionName, bk__mostRecentSessionDelay, BankValueGetAsFixed(ctgBank, sectionName, bk__currentSessionDelay));
+                        BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionAttempts, 0);
+                        BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionFailures, 0);
+                        BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, 0.0);
+                        BankSave(ctgBank);
                     }
                 }
             }
@@ -228,7 +226,28 @@ void bk__init() {
     string unitId;
     string sectionName;
 
+    int i;
+
+    // dbg("bank exists before load: " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
     ctgBank = BankLoad("cadenzastrainingground", 1);
+    // dbg("bank exists after load: " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
+    BankWait(ctgBank);
+    // dbg("bank exists after BankWait(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
+    // Wait(1.0, c_timeReal);
+    // dbg("bank exists after Wait(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
+    // BankReload(ctgBank);
+    // dbg("bank exists after BankReload(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
+    // BankWait(ctgBank);
+    // dbg("bank exists after BankWait(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
+    // Wait(1.0, c_timeReal);
+    // dbg("bank exists after Wait(): " + libNtve_gf_ConvertBooleanToString(BankExists("cadenzastrainingground", 1)));
+
+    
+    dbg("BankSectionCount(): " + IntToString(BankSectionCount(ctgBank)));
+
+    for(i = 0; i < BankSectionCount(ctgBank); i += 1) {
+        dbg("BankSectionName(" + IntToString(i) + "): " + BankSectionName(ctgBank, i));
+    }
 
     hk_st__init(); // make sure constants have been initialized
     for(raceIdx = 0; raceIdx < RACE_COUNT; raceIdx += 1) {
@@ -236,6 +255,8 @@ void bk__init() {
             if (hk_st__buildHotkeyPromptHasValue(raceIdx, cmdIdx)) {
                 structureId = hk_st__buildHotkeyPrompts[raceIdx][cmdIdx].producedUnitId;
                 sectionName = bk__hotkeysStructuresPrefix + structureId;
+
+
 
                 // initialize if needed
                 if (!BankKeyExists(ctgBank , sectionName, bk__allTimeAttempts)) {

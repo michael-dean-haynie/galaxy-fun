@@ -117,6 +117,9 @@ void dg__onClickScoreModeBtn(int control) {
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeStructures) {
             dg_hk__createStructuresScoresDialog(dg__raceSelection);
         }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction) {
+            dg_hk__createProductionScoresDialog(dg__raceSelection);
+        }
     }
 }
 
