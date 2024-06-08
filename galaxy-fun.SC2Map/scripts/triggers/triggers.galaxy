@@ -124,6 +124,9 @@ bool tr__abilityIsUsed_Func (bool testConds, bool runActions) {
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeUpgrades) {
             hk_ug__onAbilityIsUsed(EventUnitAbility(), EventUnitAbilityStage(), EventUnit());
         }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeAbilities) {
+            hk_ab__onAbilityIsUsed(EventUnitAbility(), EventUnitAbilityStage(), EventUnit());
+        }
     }
 
     return true;

@@ -1,0 +1,762 @@
+//////////////////////////////////////////////////////////////////
+// STRUCTS
+//////////////////////////////////////////////////////////////////
+
+struct hk_ab__randoPrompt
+{
+    int raceIdx;
+    int casterIdx;
+    int abilityIdx;
+    bool hasData;
+};
+
+//////////////////////////////////////////////////////////////////
+// CONSTANTS
+//////////////////////////////////////////////////////////////////
+
+static string pylonUnitId = "Pylon";
+
+static const int randoPromptsSize = 50;
+static hk_ab__randoPrompt[RACE_COUNT][randoPromptsSize] randoPrompts; // prompt index info for randomization (by race)
+
+//////////////////////////////////////////////////////////////////
+// VARIABLES
+//////////////////////////////////////////////////////////////////
+
+static bool initialized = false;
+
+static int activeRace;
+static int activeCaster;
+static int activeAbility;
+static int activeHotkeyPromptDialog;
+static unit activeCasterUnit;
+static unit pylonPropUnit;
+static timer activeTimer;
+
+//////////////////////////////////////////////////////////////////
+// FUNCTIONS
+//////////////////////////////////////////////////////////////////
+
+
+// static function declarations
+static void initHotkeyPrompts ();
+static void promptUserForAbilitiesHotkey(int race, bool doGetNewPrompt);
+static void activateRandomPrompt();
+static void removeWeaponsFromUnit(unit inUnit);
+
+void hk_ab__begin(int raceIdx) {
+    int casterIdx;
+    int abilityIdx;
+
+    string fieldPath;
+    string abilityId;
+
+    // start fresh with bank data
+    bk__startHotkeysAbilitiesSession(raceIdx);
+
+    // Remove Techtree Requirements
+    TechTreeRequirementsEnable(1, false); // disabling requirements for upgrades
+    TechTreeRestrictionsEnable(2, true); // enabling restrictions
+    for(casterIdx = 0; casterIdx < hk_ab__castersSize; casterIdx += 1) {
+        for(abilityIdx = 0; abilityIdx < hk_ab__promptsSize; abilityIdx += 1) {
+            if (hk_ab__promptsElementHasValue(raceIdx, casterIdx, abilityIdx)) {
+                abilityId = AbilityCommandGetAbility(StringToAbilCmd(hk_ab__prompts[raceIdx][casterIdx][abilityIdx].abilityCommandStr));
+                TechTreeAbilityAllow(1, AbilityCommand(abilityId, abilityIdx), true); // explicitly allowing ability
+            }
+        }
+    }
+    
+    // resources / supply
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 999999);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 200.0);
+
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
+
+    libNtve_gf_HideScreenButton(true, sb__stopBtn);
+
+    promptUserForAbilitiesHotkey(raceIdx, true);
+
+    dg__inSession = true;
+    dg_hk__createAbilitiesScoresDialog(raceIdx);
+
+}
+
+void hk_ab__stop() {
+    int raceIdx = activeRace;
+    int casterIdx;
+    int abilityIdx;
+
+    string fieldPath;
+    string abilityId;
+    fixed originalTime;
+
+    unitgroup ug;
+    int ugCount;
+    unit ugUnit;
+
+    DialogDestroy(activeHotkeyPromptDialog);
+
+    for(casterIdx = 0; casterIdx < hk_ab__castersSize; casterIdx += 1) {
+        for(abilityIdx = 0; abilityIdx < hk_ab__promptsSize; abilityIdx += 1) {
+            if (hk_ab__promptsElementHasValue(raceIdx, casterIdx, abilityIdx)) {
+                abilityId = AbilityCommandGetAbility(StringToAbilCmd(hk_ab__prompts[raceIdx][casterIdx][abilityIdx].abilityCommandStr));
+                TechTreeAbilityAllow(1, AbilityCommand(abilityId, abilityIdx), false); // explicitly disallowing ability
+            }
+        }
+    }
+    TechTreeRestrictionsEnable(1, false); // enabling restrictions
+    TechTreeRequirementsEnable(1, true); // disabling requirements for upgrades
+
+    // resources / supply
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 0.0);
+
+    // show resources again
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, true);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, true);
+
+    // just kill everything in that general area (blame zerg weird morphing unit complexity)
+    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    ugCount = UnitGroupCount(ug, c_unitCountAll);
+    for (;; ugCount -= 1) {
+        ugUnit = UnitGroupUnitFromEnd(ug, ugCount);
+        if (ugUnit == null) { break; }
+        // don't include pylon
+        if (UnitGetType(ugUnit) == pylonUnitId) {
+            continue;
+        }
+        UnitKill(ugUnit);
+    }
+    activeCasterUnit = null;
+
+    // remove pylon (if needed)
+    if (pylonPropUnit != null) {
+        UnitRemove(pylonPropUnit);
+        pylonPropUnit = null;
+    }
+
+    // remove creep
+    CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
+
+    dg_hk__createSelectTrainingModeDialog();
+
+    dg__inSession = false;
+    dg_hk__createAbilitiesScoresDialog(raceIdx);
+}
+
+static void removeWeaponsFromUnit(unit inUnit) {
+    int weaponCount = UnitWeaponCount(inUnit);
+    int weaponIdx;
+
+    string weapon;
+
+    for(weaponIdx = 1; weaponIdx <= weaponCount; weaponIdx += 1) {
+        weapon = UnitWeaponGet(inUnit, weaponIdx);
+        UnitWeaponRemove(inUnit, weapon);
+    }
+}
+
+static void promptUserForAbilitiesHotkey(int race, bool doGetNewPrompt) {
+    string abilityTargetUnitId;
+    string damagedStructureUnitId;
+    string inTransportUnitId;
+    abilcmd casterSetupAbilCmd;
+    bool needsNuke;
+    bool needsBase;
+
+    activeRace = race;
+    if (doGetNewPrompt) {
+        activateRandomPrompt();
+    }
+
+    abilityTargetUnitId = hk_ab__abilities[activeRace][activeCaster][activeAbility].abilityTargetUnitId;
+    damagedStructureUnitId = hk_ab__abilities[activeRace][activeCaster][activeAbility].damagedStructureUnitId;
+    inTransportUnitId = hk_ab__abilities[activeRace][activeCaster][activeAbility].inTransportUnitId;
+    casterSetupAbilCmd = hk_ab__abilities[activeRace][activeCaster][activeAbility].casterSetupAbilCmd;
+    needsNuke = hk_ab__abilities[activeRace][activeCaster][activeAbility].needsNuke;
+    needsBase = hk_ab__abilities[activeRace][activeCaster][activeAbility].needsBase;
+
+    // prompt dialog
+    if (activeHotkeyPromptDialog != 0) {
+        DialogDestroy(activeHotkeyPromptDialog);
+    }
+    activeHotkeyPromptDialog = dg_hk__createHotkeyPromptDialog(
+        hk_ab__prompts[activeRace][activeCaster][activeAbility].promptInstruction,
+        hk_ab__prompts[activeRace][activeCaster][activeAbility].promptTargetTxt,
+        hk_ab__prompts[activeRace][activeCaster][activeAbility].abilityIconSrc
+    );
+
+    // track response time
+    if (activeTimer == null) {
+        activeTimer = TimerCreate();
+        TimerStart(activeTimer, 9999.0, false, 1);
+    }
+    TimerRestart(activeTimer);
+
+    // caster
+    if (activeCasterUnit != null && UnitGetType(activeCasterUnit) != hk_ab__prompts[activeRace][activeCaster][activeAbility].casterUnitId) {
+        UnitRemove(activeCasterUnit);
+        activeCasterUnit = null;
+    }
+    if (activeCasterUnit == null) {
+        libNtve_gf_CreateUnitsAtPoint2(1, hk_ab__prompts[activeRace][activeCaster][activeAbility].casterUnitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_structure_location"));
+        activeCasterUnit = UnitLastCreated();
+    }
+    UnitSelect(activeCasterUnit, 1, true);
+    UnitSetPropertyFixed(activeCasterUnit, c_unitPropEnergyPercent,100.0);
+    removeWeaponsFromUnit(activeCasterUnit); // so it doesn't attack
+
+    // add cargo
+    UnitSetPropertyFixed(activeCasterUnit, c_unitPropCarriedMinerals, 5);
+
+    // provide target for ability (neutral hostile)
+    if (abilityTargetUnitId != null) {
+        libNtve_gf_CreateUnitsAtPoint2(1, abilityTargetUnitId, c_unitCreateIgnorePlacement, 15, PointFromName("hotkeytraining_active_unit_location"));
+        // UnitSetPropertyFixed(UnitLastCreated(), c_unitPropLifePercent,50.0);
+        UnitSetState(UnitLastCreated(), c_unitStateStunned, true);
+    }
+
+    // provide damaged structure for repair
+    if (damagedStructureUnitId != null) {
+        libNtve_gf_CreateUnitsAtPoint2(1, damagedStructureUnitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_active_unit_location"));
+        UnitSetPropertyFixed(UnitLastCreated(), c_unitPropLifePercent, 50.0);
+    }
+
+    // provide unit to be loaded inside transport
+    if (inTransportUnitId != null) {
+        libNtve_gf_CreateUnitsAtPoint2(1, inTransportUnitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_active_unit_location"));
+        UnitPutInTransport(UnitLastCreated(), activeCasterUnit);
+    }
+
+    // execute setup by caster
+    if (casterSetupAbilCmd != null) {
+        UnitIssueOrder(activeCasterUnit, Order(casterSetupAbilCmd), c_orderQueueReplace);
+    }
+
+    // prepare nuke
+    if (needsNuke) {
+        libNtve_gf_CreateUnitsAtPoint2(1, "GhostAcademy", c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
+        UnitMagazineArm(UnitLastCreated(), AbilityCommand("ArmSiloWithNuke", 0), 1);
+    }
+
+    // prepare base
+    if (needsBase) {
+        if (activeRace == TERRAN) {
+            libNtve_gf_CreateUnitsAtPoint2(1, "CommandCenter", c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
+        }
+        if (activeRace == ZERG) {
+            libNtve_gf_CreateUnitsAtPoint2(1, "Hatchery", c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
+        }
+        if (activeRace == ZERG) {
+            libNtve_gf_CreateUnitsAtPoint2(1, "Nexus", c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
+        }
+    }
+
+    // pylon (if needed)
+    if (pylonPropUnit != null && activeRace != PROTOSS) {
+        UnitRemove(pylonPropUnit);
+        pylonPropUnit = null;
+    }
+    if (pylonPropUnit == null && activeRace == PROTOSS) {
+        libNtve_gf_CreateUnitsAtPoint2(1, pylonUnitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
+        pylonPropUnit = UnitLastCreated();
+    }
+
+    // creep (if needed)
+    if (activeRace == ZERG) {
+        CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, true, true);
+    }
+    if (activeRace != ZERG) {
+        CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
+    }
+}
+
+// sets active indecies for a random prompt from a flat list
+static void activateRandomPrompt() {
+    int randomIndex = RandomInt(0, randoPromptsSize - 1);
+
+    while(randoPrompts[activeRace][randomIndex].hasData == false) {
+        randomIndex = RandomInt(0, randoPromptsSize - 1);
+    }
+
+    activeCaster = randoPrompts[activeRace][randomIndex].casterIdx;
+    activeAbility = randoPrompts[activeRace][randomIndex].abilityIdx;
+}
+
+void hk_ab__onAbilityIsUsed(abilcmd triggeringAbilCmd, int triggeringAbilCmdStage, unit triggeringUnit) {
+    string targetAbilityCommandStr = hk_ab__prompts[activeRace][activeCaster][activeAbility].abilityCommandStr;
+    abilcmd targetAbilCmd = StringToAbilCmd(hk_ab__prompts[activeRace][activeCaster][activeAbility].abilityCommandStr);
+    string targetAbility = AbilityCommandGetAbility(targetAbilCmd);
+    int targetCommand = AbilityCommandGetCommand(targetAbilCmd);
+    
+    abilcmd casterSetupAbilCmd = hk_ab__abilities[activeRace][activeCaster][activeAbility].casterSetupAbilCmd;
+
+    string ability = AbilityCommandGetAbility(triggeringAbilCmd);
+    int command = AbilityCommandGetCommand(triggeringAbilCmd);
+
+    unitgroup ug;
+    int ugCount;
+    unit ugUnit;
+
+    bool success;
+
+    if (
+        triggeringUnit != activeCasterUnit
+        || triggeringAbilCmdStage != c_unitAbilStageExecute
+        || (triggeringAbilCmd == casterSetupAbilCmd)
+    ) {
+        return; // unit was probably created by trigger or some other way (like canceled when destroying building)
+    }
+
+    success = ability == targetAbility && command == targetCommand;
+
+    // success
+    if (success) {
+        bk__saveHotkeysAbilitiesAttempt(activeRace, targetAbilityCommandStr, true, TimerGetElapsed(activeTimer));
+    }
+    // failure
+    else {
+        bk__saveHotkeysAbilitiesAttempt(activeRace, targetAbilityCommandStr, false, 0.0);
+    }
+
+    // just kill everything in that general area (blame zerg weird morphing unit complexity)
+    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    ugCount = UnitGroupCount(ug, c_unitCountAll);
+    for (;; ugCount -= 1) {
+        ugUnit = UnitGroupUnitFromEnd(ug, ugCount);
+        if (ugUnit == null) { break; }
+        if (UnitGetType(ugUnit) == pylonUnitId) {
+            continue;
+        }
+        UnitKill(ugUnit);
+    }
+    activeCasterUnit = null;
+
+    // scores dialog
+    dg_hk__createAbilitiesScoresDialog(activeRace);
+
+    promptUserForAbilitiesHotkey(activeRace, success);
+
+}
+
+bool hk_ab__abilitiesElementHasValue(int race, int caster, int ability) {
+    if (hk_ab__abilities[race][caster][ability].hasData == true) {
+        return true;
+    }
+    return false;
+}
+
+bool hk_ab__promptsElementHasValue(int race, int caster, int command) {
+    if (hk_ab__prompts[race][caster][command].promptInstruction != null) {
+        return true;
+    }
+    return false;
+}
+
+//////////////////////////////////////////////////////////////////
+// Initialization
+//////////////////////////////////////////////////////////////////
+
+void hk_ab__init() {
+    int caster = -1;
+    int ability = 0;
+    string casterUnitId;
+
+    if (initialized) {
+        return;
+    }
+
+    casterUnitId = "CommandCenter"; // skipping load/unload (covered by bunker or medivac)
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "UpgradeToOrbital,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "UpgradeToPlanetaryFortress,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "OrbitalCommand";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "ScannerSweep,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "OrbitalCommand";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "CalldownMULE,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "SupplyDepot";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "SupplyDepotLower,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "SupplyDepotLowered";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "SupplyDepotRaise,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Barracks"; // will cover add-ons/lift-off/land for factory and starport
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "BarracksLiftOff,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "BarracksFlying";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "BarracksLand,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "BarracksAddOns,Build1";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "BarracksAddOns,Build2";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Bunker";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "BunkerTransport,UnloadAll";
+    hk_ab__abilities[TERRAN][caster][ability].inTransportUnitId = "Marine";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    // NOT ENOUGH ROOM
+    // ability += 1;
+    // hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    // hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "BunkerTransport,Load";
+    // hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "SalvageShared,On";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "GhostAcademy";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "ArmSiloWithNuke,Ammo1";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "SCV";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "Repair,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].damagedStructureUnitId = "Bunker";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    // NOT ENOUGH ROOM
+    // ability += 1;
+    // hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    // hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "SCVHarvest,Gather";
+    // hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "SCVHarvest,Return";
+    hk_ab__abilities[TERRAN][caster][ability].needsBase = true;
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Marine"; // will cover stim for marauder
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "Stimpack,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Reaper";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "KD8Charge,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Ghost"; // will cover cloak/uncloak for banshee
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "GhostCloak,On";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "GhostCloak,Off";
+    hk_ab__abilities[TERRAN][caster][ability].casterSetupAbilCmd = StringToAbilCmd("GhostCloak,On");
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "GhostHoldFire,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "GhostWeaponsFree,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].casterSetupAbilCmd = StringToAbilCmd("GhostHoldFire,Execute");
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "ChannelSnipe,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].abilityTargetUnitId = "HighTemplar";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "EMP,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "TacNukeStrike,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].needsNuke = true;
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Hellion";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "MorphToHellionTank,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "HellionTank";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "MorphToHellion,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Cyclone";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "LockOn,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].abilityTargetUnitId = "Zealot";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "WidowMine";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "WidowMineBurrow,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "WidowMineBurrowed";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "WidowMineUnburrow,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "SiegeTank";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "SiegeMode,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "SiegeTankSieged";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "Unsiege,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Thor";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "ThorAPMode,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "ThorAP";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "ThorNormalMode,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Medivac"; // bunker is covering load/unload
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "MedivacSpeedBoost,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "VikingFighter";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "AssaultMode,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "VikingAssault";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "FighterMode,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Liberator";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "LiberatorAGTarget,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = "LiberatorAG";
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "LiberatorAATarget,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Raven";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "RavenShredderMissile,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].abilityTargetUnitId = "Battlecruiser";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "RavenScramblerMissile,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].abilityTargetUnitId = "SiegeTankSieged";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "BuildAutoTurret,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    casterUnitId = "Battlecruiser";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "Hyperjump,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[TERRAN][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[TERRAN][caster][ability].abilCmdStr = "Yamato,Execute";
+    hk_ab__abilities[TERRAN][caster][ability].abilityTargetUnitId = "SiegeTankSieged";
+    hk_ab__abilities[TERRAN][caster][ability].hasData = true;
+
+
+    // TOOD: (terran)
+    // bunker needs units in it
+    // scv needs something to repair
+
+    // TODO: zerg, protoss
+
+
+    
+    initHotkeyPrompts();
+
+    initialized = true;
+}
+
+static void initHotkeyPrompts () {
+    int race;
+    int caster;
+    int ability;
+
+    string orgCasterId;
+    string orgCasterIconSrc;
+    string orgCasterNameStr;
+    text orgCasterNameTxt;
+
+
+    string abilCmdStr;
+    abilcmd abilCmd;
+    string abilityStr;
+    int commandInt;
+    string abilityScope;
+
+    string abilityNameStr;
+    text abilityNameTxt;
+    string abilityButtonId;
+    string abilityIconSrc;
+
+    string fieldPath;
+
+    int promptsCountForRace;
+
+    for (race = 0; race < RACE_COUNT; race += 1) {
+        promptsCountForRace = 0;
+        for (caster = 0; caster < hk_ab__castersSize; caster += 1) {
+            for(ability = 0; ability < hk_ab__abilitiesSize; ability += 1) {
+                if (hk_ab__abilitiesElementHasValue(race, caster, ability)) {
+                    // fill out ability struct values with defaults
+                    if (hk_ab__abilities[race][caster][ability].orgCasterUnitId == null) {
+                        hk_ab__abilities[race][caster][ability].orgCasterUnitId = hk_ab__abilities[race][caster][ability].casterUnitId;
+                    }
+
+                    orgCasterId = hk_ab__abilities[race][caster][ability].orgCasterUnitId;
+                    if(orgCasterId == "Cyclone") {
+                        orgCasterIconSrc = CatalogFieldValueGet(c_gameCatalogButton, "BuildCyclone", "Icon", 1);
+                    }
+                    else {
+                        orgCasterIconSrc = CatalogFieldValueGet(c_gameCatalogButton, orgCasterId, "Icon", 1);
+                    }
+                    orgCasterNameStr = CatalogFieldValueGet(c_gameCatalogUnit, orgCasterId, "Name", 1);
+                    orgCasterNameTxt = StringExternal(orgCasterNameStr);
+
+                    abilCmdStr = hk_ab__abilities[race][caster][ability].abilCmdStr;
+                    abilCmd = StringToAbilCmd(abilCmdStr);
+                    abilityStr = AbilityCommandGetAbility(abilCmd);
+                    commandInt = AbilityCommandGetCommand(abilCmd);
+                    abilityScope = CatalogEntryScope(c_gameCatalogAbil, abilityStr);
+
+                    // default (potentially overridden below)
+                    abilityNameStr = CatalogFieldValueGet(c_gameCatalogAbil, abilityStr, "Name", 1);
+                    if (
+                        abilityScope == "CAbilBuild"
+                        || abilityScope == "CAbilArmMagazine"
+                    ) {
+                        fieldPath = "InfoArray[" + IntToString(commandInt) + "].Button.DefaultButtonFace";
+                        abilityButtonId = CatalogFieldValueGet(c_gameCatalogAbil, abilityStr, fieldPath, 1);
+                    }
+                    else {
+                        fieldPath = "CmdButtonArray[" + IntToString(commandInt) + "].DefaultButtonFace";
+                        abilityButtonId = CatalogFieldValueGet(c_gameCatalogAbil, abilityStr, fieldPath, 1);
+                    }
+                    abilityIconSrc = CatalogFieldValueGet(c_gameCatalogButton, abilityButtonId, "Icon", 1);
+                    abilityNameStr = "Button/Name/" + abilityButtonId;
+                    abilityNameTxt = StringExternal(abilityNameStr);
+
+                    // dbg(IntToString(race) + " " + IntToString(caster) + " " + IntToString(commandInt) + " - " + abilCmdStr);
+                    hk_ab__prompts[race][caster][ability].promptInstruction = "Cast Ability";
+                    hk_ab__prompts[race][caster][ability].promptTargetTxt = abilityNameTxt;
+                    hk_ab__prompts[race][caster][ability].abilityIconSrc = abilityIconSrc;
+                    hk_ab__prompts[race][caster][ability].abilityCommandStr = abilCmdStr;
+                    hk_ab__prompts[race][caster][ability].casterUnitId = hk_ab__abilities[race][caster][ability].casterUnitId;
+                    hk_ab__prompts[race][caster][ability].orgCasterUnitId = orgCasterId;
+                    hk_ab__prompts[race][caster][ability].orgCasterUnitNameTxt = orgCasterNameTxt;
+                    hk_ab__prompts[race][caster][ability].orgCasterUnitIconSrc = orgCasterIconSrc;
+
+
+                    randoPrompts[race][promptsCountForRace].raceIdx = race;
+                    randoPrompts[race][promptsCountForRace].casterIdx = caster;
+                    randoPrompts[race][promptsCountForRace].abilityIdx = ability;
+                    randoPrompts[race][promptsCountForRace].hasData = true;
+                    promptsCountForRace += 1;
+                }
+            }
+        }
+    }
+
+}

@@ -1,0 +1,51 @@
+//////////////////////////////////////////////////////////////////
+// STRUCTS
+//////////////////////////////////////////////////////////////////
+
+struct hk__ability
+{
+    string orgCasterUnitId; // the caster under-which this ability is organized in the scored dialog (lift/land under same building)
+    text orgCasterNameTxt;
+    string casterUnitId;
+    string abilCmdStr;
+    abilcmd abilCmd;
+    string abilityStr;
+    int commandInt;
+    string inTransportUnitId; // e.g. unload marine from bunker
+    string damagedStructureUnitId; // e.g. repair bunker
+    string abilityTargetUnitId; // e.g. snipe infestor
+    abilcmd casterSetupAbilCmd; // e.g. cloack before decloak
+    bool needsNuke; // e.g. ghost launching nuke
+    bool needsBase;
+    bool hasData;
+
+};
+
+//////////////////////////////////////////////////////////////////
+// CONSTANTS
+//////////////////////////////////////////////////////////////////
+
+const int hk_ab__castersSize = 20;
+const int hk_ab__abilitiesSize = 8;
+hk__ability[RACE_COUNT][hk_ab__castersSize][hk_ab__abilitiesSize] hk_ab__abilities;
+
+const int hk_ab__promptsSize= 30;
+hk__prompt[RACE_COUNT][hk_ab__castersSize][hk_ab__promptsSize] hk_ab__prompts;
+
+//////////////////////////////////////////////////////////////////
+// VARIABLES
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// FUNCTIONS
+//////////////////////////////////////////////////////////////////
+
+void hk_ab__init();
+
+void hk_ab__begin(int race);
+void hk_ab__stop();
+
+void hk_ab__onAbilityIsUsed(abilcmd triggeringAbilCmd, int triggeringAbilCmdStage, unit triggeringUnit);
+
+bool hk_ab__abilitiesElementHasValue(int race, int caster, int ability);
+bool hk_ab__promptsElementHasValue(int race, int caster, int command);

@@ -452,28 +452,6 @@ static void initHotkeyPrompts () {
                             upgradeNameTxt = TextReplaceWord(upgradeNameTxt, StringToText("Zerg "), StringToText(""), 1, false);
                             upgradeNameTxt = TextReplaceWord(upgradeNameTxt, StringToText("Protoss "), StringToText(""), 1, false);
 
-
-                            // // use shorter names from parent if applicable (sans "Level 1")
-                            // if (StringContains(upgradeId, "Level1", c_stringEnd, false)) {
-                            //     // try to find via api
-                            //     upgradeParentId = CatalogEntryParent(c_gameCatalogUpgrade, upgradeId);
-                            //     if (upgradeParentId != null && StringLength(upgradeParentId) > 0 && upgradeParentId != upgradeId) {
-                            //         upgradeNameStr = "Upgrade/Name/" + upgradeParentId;
-                            //     }
-
-                            //     // try to fake via string manipulation according to convention
-                            //     upgradeParentId = StringReplace(upgradeId, "", StringFind(upgradeId, "Level1", false), StringLength(upgradeId));
-                            //     if (upgradeParentId != null && StringLength(upgradeParentId) > 0 && upgradeParentId != upgradeId) {
-                            //         upgradeNameStr = "Upgrade/Name/" + upgradeParentId;
-                            //     }
-
-                            //     if (upgradeParentId != null && StringLength(upgradeParentId) > 0 && upgradeParentId != upgradeId) {
-                            //         dbg(upgradeId + " has string manip parent " + upgradeParentId);
-                            //         upgradeNameStr = "Upgrade/Name/" + upgradeParentId;
-                            //     }
-                            // }
-                            // upgradeNameTxt = StringExternal(upgradeNameStr);
-
                             hk_ug__prompts[race][caster][command].promptInstruction = "Research Upgrade";
                             hk_ug__prompts[race][caster][command].casterUnitId = hk_ug__casters[race][caster].unitId;
                             hk_ug__prompts[race][caster][command].casterUnitIconSrc = casterUnitIconSrc;

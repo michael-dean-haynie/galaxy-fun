@@ -15,6 +15,7 @@ include "scripts/dialogs/hotkeys/dialogs_hotkeys_h"
 include "scripts/screenbuttons/screenbuttons_h"
 include "scripts/hotkeys/structures/hotkeys_structures_h"
 include "scripts/hotkeys/production/hotkeys_production_h"
+include "scripts/hotkeys/abilities/hotkeys_abilities_h"
 include "scripts/hotkeys/upgrades/hotkeys_upgrades_h"
 
 // module implementations
@@ -29,6 +30,7 @@ include "scripts/dialogs/hotkeys/dialogs_hotkeys"
 include "scripts/screenbuttons/screenbuttons"
 include "scripts/hotkeys/structures/hotkeys_structures"
 include "scripts/hotkeys/production/hotkeys_production"
+include "scripts/hotkeys/abilities/hotkeys_abilities"
 include "scripts/hotkeys/upgrades/hotkeys_upgrades"
 include "scripts/explore" // exploratory / throw-away
 
@@ -46,6 +48,7 @@ void main() {
     sb__init();     // screenbuttons/screenbuttons.galaxy
     hk_st__init();  // hotkeys/structures/hotkeys_structures.galaxy
     hk_pd__init();  // hotkeys/production/hotkeys_production.galaxy
+    hk_ab__init();  // hotkeys/abilities/hotkeys_abilities.galaxy
     hk_ug__init();  // hotkeys/upgrades/hotkeys_upgrades.galaxy
 
     ///////////////////////////////////////
