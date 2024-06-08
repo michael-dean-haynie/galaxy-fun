@@ -68,9 +68,8 @@ bool gt_codegeneration_Func (bool testConds, bool runActions) {
         return true;
     }
 
-    TechTreeUpgradeAllow(1, "WarpGateResearch", false);
-    UnitSetProgressComplete(EventUnitProgressUnit(), 1, 100);
-    TechTreeAbilityAllow(1, AbilityCommand("UpgradeToWarpGate", 0), true);
+    libNtve_gf_SetAlliance(1, 2, libNtve_ge_AllianceSetting_AllyWithSharedVision);
+    UnitMagazineArm(UnitLastCreated(), AbilityCommand("ArmSiloWithNuke", 0), 1);
     return true;
 }
 

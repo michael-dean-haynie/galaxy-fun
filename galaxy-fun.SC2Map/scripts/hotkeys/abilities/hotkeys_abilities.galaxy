@@ -206,8 +206,9 @@ static void promptUserForAbilitiesHotkey(int race, bool doGetNewPrompt) {
         activeCasterUnit = UnitLastCreated();
     }
     UnitSelect(activeCasterUnit, 1, true);
-    UnitSetPropertyFixed(activeCasterUnit, c_unitPropEnergyPercent,100.0);
+    UnitSetPropertyFixed(activeCasterUnit, c_unitPropEnergyPercent, 90.0);
     removeWeaponsFromUnit(activeCasterUnit); // so it doesn't attack
+    UnitClearCooldowns(activeCasterUnit, true);
 
     // add cargo
     UnitSetPropertyFixed(activeCasterUnit, c_unitPropCarriedMinerals, 5);
@@ -250,7 +251,7 @@ static void promptUserForAbilitiesHotkey(int race, bool doGetNewPrompt) {
         if (activeRace == ZERG) {
             libNtve_gf_CreateUnitsAtPoint2(1, "Hatchery", c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
         }
-        if (activeRace == ZERG) {
+        if (activeRace == PROTOSS) {
             libNtve_gf_CreateUnitsAtPoint2(1, "Nexus", c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
         }
     }
@@ -656,14 +657,275 @@ void hk_ab__init() {
     hk_ab__abilities[TERRAN][caster][ability].hasData = true;
 
 
-    // TOOD: (terran)
-    // bunker needs units in it
-    // scv needs something to repair
+    casterUnitId = "Hatchery";
+    caster = 0;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "UpgradeToLair,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
 
-    // TODO: zerg, protoss
+    casterUnitId = "Lair";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "UpgradeToHive,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
 
+    // COVERED BY SPORE CRAWLER
+    // casterUnitId = "SpineCrawler"; 
+    // caster += 1;
+    // ability = 0;
+    // hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    // hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "SpineCrawlerUproot,Execute";
+    // hk_ab__abilities[ZERG][caster][ability].hasData = true;
 
-    
+    // ability += 1;
+    // hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    // hk_ab__abilities[ZERG][caster][ability].casterUnitId = "SpineCrawlerUprooted";
+    // hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "SpineCrawlerRoot,Execute";
+    // hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "SporeCrawler";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "SporeCrawlerUproot,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "SporeCrawlerUprooted";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "SporeCrawlerRoot,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Spire";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "UpgradeToGreaterSpire,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "NydusNetwork";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "BuildNydusCanal,Build1";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "NydusCanalTransport,UnloadAll";
+    hk_ab__abilities[ZERG][caster][ability].inTransportUnitId = "Zergling";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "CreepTumor";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "CreepTumorBurrowed";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "CreepTumorBuild,Build1";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Drone";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "BurrowDroneDown,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "DroneBurrowed";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "BurrowDroneUp,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "DroneHarvest,Return";
+    hk_ab__abilities[ZERG][caster][ability].needsBase = true;
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Overlord";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "MorphToOverseer,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "GenerateCreep,On";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "GenerateCreep,Off";
+    hk_ab__abilities[ZERG][caster][ability].casterSetupAbilCmd = StringToAbilCmd("GenerateCreep,On");
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "Overseer";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "OverseerMorphtoOverseerSiegeMode,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "OverseerSiegeMode";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "OverseerSiegeModeMorphtoOverseer,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "Overseer";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "Contaminate,Execute";
+    hk_ab__abilities[ZERG][caster][ability].abilityTargetUnitId = "Barracks";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "Overseer";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "SpawnChangeling,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Queen";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "SpawnLarva,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+    hk_ab__abilities[ZERG][caster][ability].needsBase = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "QueenBuild,Build1";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "Transfusion,Execute";
+    hk_ab__abilities[ZERG][caster][ability].damagedStructureUnitId = "SporeCrawler";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Zergling";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "MorphToBaneling,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Baneling";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "VolatileBurstBuilding,On";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "VolatileBurstBuilding,Off";
+    hk_ab__abilities[ZERG][caster][ability].casterSetupAbilCmd = StringToAbilCmd("VolatileBurstBuilding,On");
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "Explode,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Roach";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "MorphToRavager,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Ravager";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "RavagerCorrosiveBile,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Hydralisk";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "MorphToLurker,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Corruptor";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "CausticSpray,Execute";
+    hk_ab__abilities[ZERG][caster][ability].abilityTargetUnitId = "CommandCenter";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "MorphToBroodLord,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "SwarmHostMP";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "SpawnLocustsTargeted,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "LurkerMP";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "LurkerMPBurrowed";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "LurkerHoldFire,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].orgCasterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = "LurkerMPBurrowed";
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "LurkerRemoveHoldFire,Execute";
+    hk_ab__abilities[ZERG][caster][ability].casterSetupAbilCmd = StringToAbilCmd("LurkerHoldFire,Execute");
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Infestor";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "FungalGrowth,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "NeuralParasite,Execute";
+    hk_ab__abilities[ZERG][caster][ability].abilityTargetUnitId = "Battlecruiser";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    casterUnitId = "Viper";
+    caster += 1;
+    ability = 0;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "ParasiticBomb,Execute";
+    hk_ab__abilities[ZERG][caster][ability].abilityTargetUnitId = "Medivac";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "ViperConsumeStructure,Execute";
+    hk_ab__abilities[ZERG][caster][ability].needsBase = true;
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "BlindingCloud,Execute";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
+    ability += 1;
+    hk_ab__abilities[ZERG][caster][ability].casterUnitId = casterUnitId;
+    hk_ab__abilities[ZERG][caster][ability].abilCmdStr = "Yoink,Execute";
+    hk_ab__abilities[ZERG][caster][ability].abilityTargetUnitId = "Medivac";
+    hk_ab__abilities[ZERG][caster][ability].hasData = true;
+
     initHotkeyPrompts();
 
     initialized = true;
