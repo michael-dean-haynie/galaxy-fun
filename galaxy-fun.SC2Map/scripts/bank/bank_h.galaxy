@@ -8,6 +8,7 @@
 
 string bk__hotkeysStructuresPrefix = "hotkeys.structures.";
 string bk__hotkeysProductionPrefix = "hotkeys.production.";
+string bk__hotkeysUpgradesPrefix = "hotkeys.upgrades.";
 
 string bk__currentSession = "currentSession";
 string bk__mostRecentSession = "mostRecentSession";
@@ -42,6 +43,10 @@ int bk__raceInt(string raceId);
 
 void bk__startHotkeysStructuresSession(int raceInt);
 void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool attemptWasSuccessful, fixed delay);
+void bk__startHotkeysProductionSession(int raceInt);
+void bk__saveHotkeysProductionAttempt(int raceInt, string unitId, bool attemptWasSuccessful, fixed delay);
+void bk__startHotkeysUpgradesSession(int raceInt);
+void bk__saveHotkeysUpgradesAttempt(int raceInt, string abilityButtonId, bool attemptWasSuccessful, fixed delay);
 
 int bk__getValueAsInt(string section, string key);
 fixed bk__getValueAsFixed(string section, string key);

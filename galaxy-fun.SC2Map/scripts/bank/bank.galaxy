@@ -115,6 +115,41 @@ void bk__startHotkeysProductionSession(int raceInt) {
     BankSave(ctgBank);
 }
 
+void bk__startHotkeysUpgradesSession(int raceInt) {
+    int cmdIdx;
+    int casterIdx;
+
+    string abilityUpgradeId;
+    string sectionName;
+
+    ctgBank = BankLoad("cadenzastrainingground", 1);
+
+    hk_ug__init(); // make sure constants have been initialized
+    for(casterIdx = 0; casterIdx < hk_ug__castersSize; casterIdx += 1) {
+        if(hk_ug__castersElementHasValue(raceInt, casterIdx)) {
+            for(cmdIdx = 0; cmdIdx < hk_ug__promptsSize; cmdIdx += 1) {
+                if (hk_ug__promptsElementHasValue(raceInt, casterIdx, cmdIdx)) {
+                    abilityUpgradeId = hk_ug__prompts[raceInt][casterIdx][cmdIdx].abilityUpgradeId;
+                    sectionName = bk__hotkeysUpgradesPrefix + abilityUpgradeId;
+
+                    // move "current" data from last session to "most recent session", and start fresh for this session
+                    if (BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts) > 0) {
+                        BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionAttempts, BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts));
+                        BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionFailures, BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionFailures));
+                        BankValueSetFromFixed(ctgBank, sectionName, bk__mostRecentSessionDelay, BankValueGetAsFixed(ctgBank, sectionName, bk__currentSessionDelay));
+                        BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionAttempts, 0);
+                        BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionFailures, 0);
+                        BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, 0.0);
+                        BankSave(ctgBank);
+                    }
+                }
+            }
+        }
+    }
+
+    BankSave(ctgBank);
+}
+
 void bk__saveHotkeysStructuresAttempt(int raceInt, string structureId, bool attemptWasSuccessful, fixed delay) {
     string sectionName = bk__hotkeysStructuresPrefix + structureId;
     int existingAllTimeAttempts;
@@ -205,6 +240,51 @@ void bk__saveHotkeysProductionAttempt(int raceInt, string unitId, bool attemptWa
     BankSave(ctgBank);
 }
 
+void bk__saveHotkeysUpgradesAttempt(int raceInt, string abilityUpgradeId, bool attemptWasSuccessful, fixed delay) {
+    string sectionName = bk__hotkeysUpgradesPrefix + abilityUpgradeId;
+    int existingAllTimeAttempts;
+    int existingAllTimeFailures;
+    fixed existingAllTimeDelay;
+    int existingAllTimeSuccesses;
+    int existingCurrentSessionAttempts;
+    int existingCurrentSessionFailures;
+    fixed existingCurrentSessionDelay;
+    int existingCurrentSessionSuccesses;
+
+    fixed newAllTimeDelay;
+    fixed newCurrentSessionDelay;
+
+    existingAllTimeAttempts = BankValueGetAsInt(ctgBank, sectionName, bk__allTimeAttempts);
+    existingAllTimeFailures = BankValueGetAsInt(ctgBank, sectionName, bk__allTimeFailures);
+    existingAllTimeDelay = BankValueGetAsFixed(ctgBank, sectionName, bk__allTimeDelay);
+    existingAllTimeSuccesses = existingAllTimeAttempts - existingAllTimeFailures;
+
+    existingCurrentSessionAttempts = BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionAttempts);
+    existingCurrentSessionFailures = BankValueGetAsInt(ctgBank, sectionName, bk__currentSessionFailures);
+    existingCurrentSessionDelay = BankValueGetAsFixed(ctgBank, sectionName, bk__currentSessionDelay);
+    existingCurrentSessionSuccesses = existingCurrentSessionAttempts - existingCurrentSessionFailures;
+
+    // update attempts
+    BankValueSetFromInt(ctgBank, sectionName, bk__allTimeAttempts, existingAllTimeAttempts + 1);
+    BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionAttempts, existingCurrentSessionAttempts + 1);
+
+    if (attemptWasSuccessful) {
+        // update delays
+        newAllTimeDelay = ((existingAllTimeSuccesses * existingAllTimeDelay) + delay) / (existingAllTimeAttempts + 1);
+        BankValueSetFromFixed(ctgBank, sectionName, bk__allTimeDelay, newAllTimeDelay);
+
+        newCurrentSessionDelay = ((existingCurrentSessionSuccesses * existingCurrentSessionDelay) + delay) / (existingCurrentSessionAttempts + 1);
+        BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, newCurrentSessionDelay);
+    }
+    else {
+        // update failures
+        BankValueSetFromInt(ctgBank, sectionName, bk__allTimeFailures, existingAllTimeFailures + 1);
+        BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionFailures, existingCurrentSessionFailures + 1);
+    }
+
+    BankSave(ctgBank);
+}
+
 int bk__getValueAsInt(string section, string key) {
     return BankValueGetAsInt(ctgBank, section, key);
 }
@@ -225,6 +305,7 @@ void bk__init() {
     string structureId;
     string unitId;
     string sectionName;
+    string abilityUpgradeId;
 
     // for future projects - REMEMBER TO SET UP BANK PRELOADING IN THE EDITOR MENUS (map > preload info > banks)
 
@@ -302,6 +383,33 @@ void bk__init() {
         }
     }
 
+    hk_ug__init(); // make sure constants have been initialized
+    for(raceIdx = 0; raceIdx < RACE_COUNT; raceIdx += 1) {
+        for(casterIdx = 0; casterIdx < hk_ug__castersSize; casterIdx += 1) {
+            if(hk_ug__castersElementHasValue(raceIdx, casterIdx)) {
+                for(cmdIdx = 0; cmdIdx < hk_ug__promptsSize; cmdIdx += 1) {
+                    if (hk_ug__promptsElementHasValue(raceIdx, casterIdx, cmdIdx)) {
+                        abilityUpgradeId = hk_ug__prompts[raceIdx][casterIdx][cmdIdx].abilityUpgradeId;
+                        sectionName = bk__hotkeysUpgradesPrefix + abilityUpgradeId;
+
+                        // initialize if needed
+                        if (!BankKeyExists(ctgBank , sectionName, bk__allTimeAttempts)) {
+                            BankValueSetFromInt(ctgBank, sectionName, bk__allTimeAttempts, 0);
+                            BankValueSetFromInt(ctgBank, sectionName, bk__allTimeFailures, 0);
+                            BankValueSetFromFixed(ctgBank, sectionName, bk__allTimeDelay, 0.0);
+                            BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionAttempts, 0);
+                            BankValueSetFromInt(ctgBank, sectionName, bk__mostRecentSessionFailures, 0);
+                            BankValueSetFromFixed(ctgBank, sectionName, bk__mostRecentSessionDelay, 0.0);
+                            BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionAttempts, 0);
+                            BankValueSetFromInt(ctgBank, sectionName, bk__currentSessionFailures, 0);
+                            BankValueSetFromFixed(ctgBank, sectionName, bk__currentSessionDelay, 0.0);
+                            BankSave(ctgBank);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 
     BankSave(ctgBank);

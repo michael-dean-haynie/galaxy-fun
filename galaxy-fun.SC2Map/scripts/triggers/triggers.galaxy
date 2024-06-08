@@ -114,6 +114,23 @@ bool tr__unitIsCreated_Func (bool testConds, bool runActions) {
 
 //////////////////////////////////////////////////////////////////
 
+void abilityIsUsed_Init () {
+    tr__abilityIsUsed = TriggerCreate("tr__abilityIsUsed_Func");
+    TriggerAddEventUnitAbility(tr__abilityIsUsed, null, null, c_unitAbilStageAll, false);
+}
+
+bool tr__abilityIsUsed_Func (bool testConds, bool runActions) {
+    if (dg__trainingArea == dg__trainingAreaHotkeys) {
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeUpgrades) {
+            hk_ug__onAbilityIsUsed(EventUnitAbility(), EventUnitAbilityStage(), EventUnit());
+        }
+    }
+
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////
+
 void dialogControlClicked_Init () {
     tr__dialogControlClicked = TriggerCreate("tr__dialogControlClicked_Func");
     TriggerAddEventDialogControl(tr__dialogControlClicked, c_playerAny, c_invalidDialogControlId, c_triggerControlEventTypeClick);
@@ -190,6 +207,7 @@ bool tr__stopSB_Func (bool testConds, bool runActions) {
 void tr__init() {
     mapInit_Init();
     unitIsCreated_Init();
+    abilityIsUsed_Init();
     dialogControlClicked_Init();
     dialogControlSelectionChanged_Init();
 

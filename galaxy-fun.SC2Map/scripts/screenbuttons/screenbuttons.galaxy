@@ -23,6 +23,10 @@ void sb__onClickStopBtn() {
             libNtve_gf_HideScreenButton(false, sb__stopBtn);
             hk_pd__stop();
         }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeUpgrades) {
+            libNtve_gf_HideScreenButton(false, sb__stopBtn);
+            hk_ug__stop();
+        }
     }
 }
 

@@ -16,7 +16,7 @@ struct hk_pd__randoPrompt
 
 static string pylonUnitId = "Pylon";
 
-const int randoPromptsSize = 30;
+static const int randoPromptsSize = 30;
 static hk_pd__randoPrompt[3][randoPromptsSize] randoPrompts; // prompt index info for randomization (by race)
 
 //////////////////////////////////////////////////////////////////

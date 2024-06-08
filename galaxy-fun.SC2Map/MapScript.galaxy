@@ -19,7 +19,7 @@ void InitLibs () {
 //--------------------------------------------------------------------------------------------------
 trigger gt_initialization;
 trigger gt_codegeneration;
-trigger gt_buttoncallback;
+trigger gt_abilitytrigger;
 
 //--------------------------------------------------------------------------------------------------
 // Custom Script: Bootstrap
@@ -84,40 +84,22 @@ void gt_codegeneration_Init () {
 //--------------------------------------------------------------------------------------------------
 // Trigger: button-callback
 //--------------------------------------------------------------------------------------------------
-bool gt_buttoncallback_Func (bool testConds, bool runActions) {
+bool gt_abilitytrigger_Func (bool testConds, bool runActions) {
     // Automatic Variable Declarations
-    unitgroup auto925C3563_g;
-    int auto925C3563_u;
-    unit auto925C3563_var;
-
-    // Conditions
-    if (testConds) {
-        if (!((EventDialogControl() == EventDialogControl()))) {
-            return false;
-        }
-    }
-
     // Actions
     if (!runActions) {
         return true;
     }
 
-    auto925C3563_g = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
-    auto925C3563_u = UnitGroupCount(auto925C3563_g, c_unitCountAll);
-    for (;; auto925C3563_u -= 1) {
-        auto925C3563_var = UnitGroupUnitFromEnd(auto925C3563_g, auto925C3563_u);
-        if (auto925C3563_var == null) { break; }
-        UnitKill(auto925C3563_var);
-    }
-    TriggerDebugOutput(1, IntToText(0), true);
+    TriggerDebugOutput(1, StringToText("happened"), true);
     return true;
 }
 
 //--------------------------------------------------------------------------------------------------
-void gt_buttoncallback_Init () {
-    gt_buttoncallback = TriggerCreate("gt_buttoncallback_Func");
-    TriggerEnable(gt_buttoncallback, false);
-    TriggerAddEventDialogControl(gt_buttoncallback, c_playerAny, c_invalidDialogControlId, c_triggerControlEventTypeSelectionChanged);
+void gt_abilitytrigger_Init () {
+    gt_abilitytrigger = TriggerCreate("gt_abilitytrigger_Func");
+    TriggerEnable(gt_abilitytrigger, false);
+    TriggerAddEventUnitAbility(gt_abilitytrigger, null, null, c_unitAbilStageAll, false);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -126,7 +108,7 @@ void gt_buttoncallback_Init () {
 void InitTriggers () {
     gt_initialization_Init();
     gt_codegeneration_Init();
-    gt_buttoncallback_Init();
+    gt_abilitytrigger_Init();
 }
 
 //--------------------------------------------------------------------------------------------------

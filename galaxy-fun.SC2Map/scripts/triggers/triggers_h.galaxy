@@ -14,6 +14,7 @@ struct tr__callbackRegistration
 
 trigger tr__mapInit;
 trigger tr__unitIsCreated;
+trigger tr__abilityIsUsed;
 trigger tr__dialogControlClicked;
 trigger tr__dialogControlSelectionChanged;
 
@@ -29,6 +30,7 @@ void tr__init();
 
 bool tr__mapInit_Func(bool testConds, bool runActions);
 bool tr__unitIsCreated_Func (bool testConds, bool runActions);
+bool tr__abilityIsUsed_Func (bool testConds, bool runActions);
 bool tr__dialogControlClicked_Func (bool testConds, bool runActions);
 bool tr__dialogControlSelectionChanged_Func (bool testConds, bool runActions);
 

@@ -1,0 +1,543 @@
+// TODO: TEMP - REMOVE
+void exploreTerran() {
+    int entryIdx;
+
+    string entry;
+    string entryScope;
+
+    int cardLayoutsCount;
+    int cardLayoutsIdx;
+    int layoutButtonsCount;
+    int layoutButtonsIdx;
+
+    string layoutButtonFace;
+    string layoutButtonType;
+    string layoutButtonAbilCmdStr;
+    abilcmd layoutButtonAbilCmd;
+    string layoutButtonAbil;
+    int layoutButtonCmd;
+    string layoutButtonCmdStr;
+
+    string abilityEntryScope;
+
+    string fieldPath;
+
+    int validHkCount;
+
+    int unitEntryCount = CatalogEntryCount(c_gameCatalogUnit);
+    dbg("unitEntryCount: " + IntToString(unitEntryCount));
+
+    for(entryIdx = 1; entryIdx <= unitEntryCount; entryIdx += 1) {
+        validHkCount = 0;
+        entry = CatalogEntryGet(c_gameCatalogUnit, entryIdx);
+
+        // filter entries
+        if (!CatalogEntryIsValid(c_gameCatalogUnit, entry)) {
+            continue;
+        };
+        if (CatalogFieldValueGet(c_gameCatalogUnit, entry, "Race", 1) != ct__raceId(TERRAN)) {
+            continue;
+        };
+        if (!StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectFamily:Melee", c_stringAnywhere, false)) {
+            continue;
+        };
+        if (!(
+            StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectType:Unit", c_stringAnywhere, false)
+            || StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectType:Structure", c_stringAnywhere, false)
+        )) {
+            continue;
+        };
+        if (
+            StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorFlags[NoPlacement]", 1)) == 1
+            || StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorFlags[NoPalettes]", 1)) == 1
+        ) {
+            continue;
+        };
+        if (StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "FlagArray[Unselectable]", 1)) == 1) {
+            continue;
+        };
+        if (entry == "GhostNova"
+            || entry == "GhostAlternate" 
+            // || entry == "MULE" // covered by scvs
+            // || entry == "CommandCenterFlying" // only has land/load, covered elsewhere
+            // || entry == "BarracksFlying" // only has land, covered elsewhere
+            // || entry == "FactoryFlying" // only has land, covered elsewhere
+            // || entry == "StarportFlying" // only has land, covered elsewhere
+            // || entry == "PlanetaryFortress" // only has load/unload, covered by command center
+            // || entry == "Marauder" // only has stim, covered by marine
+            // || entry == "Banshee" // only has cloak, covered by ghost
+        ) {
+            // dbg("skipping specific units entry: " + entry);
+            continue;
+        };
+
+        cardLayoutsCount = CatalogFieldValueCount(c_gameCatalogUnit, entry, "CardLayouts", 1);
+        for(cardLayoutsIdx = 0; cardLayoutsIdx < cardLayoutsCount; cardLayoutsIdx += 1) {
+            fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons";
+            layoutButtonsCount = CatalogFieldValueCount(c_gameCatalogUnit, entry, fieldPath, 1);
+            for(layoutButtonsIdx = 0; layoutButtonsIdx < layoutButtonsCount; layoutButtonsIdx += 1) {
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "]";
+
+                // filter buttons (as hotkeys)
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].Face";
+                layoutButtonFace = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].Type";
+                layoutButtonType = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+
+                if (layoutButtonType == "Passive"
+                    || layoutButtonType == "SelectBuilder"
+                    || layoutButtonType == "Submenu"
+                    || layoutButtonType == "CancelSubmenu"
+                    || layoutButtonType == "Undefined"
+                ) {
+                    // dbg("skipping Passive/SelectBuilder/Submenu/CancelSubmenu button in entry: " + entry);
+                    continue;
+                };
+
+                if (layoutButtonType == "AbilCmd") {
+                    fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].AbilCmd";
+                    layoutButtonAbilCmdStr = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+                    layoutButtonAbilCmd = StringToAbilCmd(layoutButtonAbilCmdStr);
+                    layoutButtonAbil = AbilityCommandGetAbility(layoutButtonAbilCmd);
+                    layoutButtonCmd = AbilityCommandGetCommand(layoutButtonAbilCmd);
+                    layoutButtonCmdStr = StringSub(layoutButtonAbilCmdStr, StringFind(layoutButtonAbilCmdStr, ",", false) + 1, StringLength(layoutButtonAbilCmdStr));
+
+                    if (
+                        layoutButtonAbilCmdStr == "SalvageShared,Off"
+                        || layoutButtonAbilCmdStr == "BunkerTransport,Load"
+                        || layoutButtonAbilCmdStr == "MedivacTransport,Load"
+                    ) {
+                        // dbg("skipping specific abilcmd button in entry: " + entry);
+                        continue;
+                    }
+
+                    if (layoutButtonAbil == "SprayTerran"
+                        || layoutButtonAbil == "SprayZerg"
+                        || layoutButtonAbil == "SprayProtoss"
+                        || layoutButtonAbil == "MedivacHeal"
+                    ) {
+                        // dbg("skipping specific ability button in entry: " + entry);
+                        continue;
+                    }
+
+                    abilityEntryScope = CatalogEntryScope(c_gameCatalogAbil, layoutButtonAbil);
+
+                    // if (abilityEntryScope == "CAbilMorph" && layoutButtonCmdStr == "Cancel") {
+                    if (layoutButtonCmdStr == "Cancel"
+                        || layoutButtonCmdStr == "Halt"
+                        || layoutButtonAbil == "LockOnCancel") {
+                        // dbg("skipping Cancel button in entry: " + entry);
+                        continue;
+                    }
+
+                    if (entry == "SCV" && abilityEntryScope == "CAbilBuild") {
+                        continue;
+                    }
+
+                    if (abilityEntryScope == "CAbilQueue"
+                        || abilityEntryScope == "CAbilBuildable"
+                        || abilityEntryScope == "CAbilTrain"
+                        || abilityEntryScope == "CAbilRally"
+                        || abilityEntryScope == "CAbilMove"
+                        || abilityEntryScope == "CAbilStop"
+                        || abilityEntryScope == "CAbilAttack"
+                        || abilityEntryScope == "CAbilResearch" // upgrades will be this
+                        || abilityEntryScope == "CAbilRedirectInstant"
+                        || abilityEntryScope == "CAbilRedirectTarget"
+                    ) {
+                        // dbg("skipping CAbilQueue/CAbilBuildable/CAbilTrain/CAbilRally/... button " + layoutButtonFace + " in entry: " + entry);
+                        continue;
+                    }
+
+                }
+
+                dbg("    (" + IntToString(validHkCount + 1) + ") " + layoutButtonFace + " <" + abilityEntryScope + "> " + layoutButtonAbilCmdStr);
+                validHkCount += 1;
+            }
+        }
+
+        if (validHkCount == 0) {
+            // dbg("skipping 0 valid abilities entry: " + entry);
+            continue;
+        };
+
+        entryScope = CatalogEntryScope(c_gameCatalogUnit, entry);
+
+        dbg("entry at index " + IntToString(entryIdx) + ": <" + entryScope + "> " + entry + "(" + IntToString(validHkCount) + ")");
+
+    }
+
+}
+
+void exploreZerg() {
+    int entryIdx;
+
+    string entry;
+    string entryScope;
+
+    int cardLayoutsCount;
+    int cardLayoutsIdx;
+    int layoutButtonsCount;
+    int layoutButtonsIdx;
+
+    string layoutButtonFace;
+    string layoutButtonType;
+    string layoutButtonAbilCmdStr;
+    abilcmd layoutButtonAbilCmd;
+    string layoutButtonAbil;
+    int layoutButtonCmd;
+    string layoutButtonCmdStr;
+
+    string abilityEntryScope;
+
+    string fieldPath;
+
+    int validHkCount;
+
+    int unitEntryCount = CatalogEntryCount(c_gameCatalogUnit);
+    dbg("unitEntryCount: " + IntToString(unitEntryCount));
+
+    for(entryIdx = 1; entryIdx <= unitEntryCount; entryIdx += 1) {
+        validHkCount = 0;
+        entry = CatalogEntryGet(c_gameCatalogUnit, entryIdx);
+
+        // filter entries
+        if (!CatalogEntryIsValid(c_gameCatalogUnit, entry)) {
+            // dbg("skipping invalid entry at index " + IntToString(entryIdx));
+            continue;
+        };
+        if (CatalogFieldValueGet(c_gameCatalogUnit, entry, "Race", 1) != ct__raceId(ZERG)) {
+        // if (CatalogFieldValueGet(c_gameCatalogUnit, entry, "Race", 1) != ct__raceId(TERRAN)) {
+            // dbg("skipping non-zerg entry: " + entry);
+            continue;
+        };
+        if (!StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectFamily:Melee", c_stringAnywhere, false)) {
+            // dbg("skipping non-mele entry: " + entry);
+            continue;
+        };
+        if (!(
+            StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectType:Unit", c_stringAnywhere, false)
+            || StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectType:Structure", c_stringAnywhere, false)
+        )) {
+            // dbg("skipping non-unit/structure entry: " + entry);
+            continue;
+        };
+        if (
+            StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorFlags[NoPlacement]", 1)) == 1
+            || StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorFlags[NoPalettes]", 1)) == 1
+        ) {
+            // dbg("skipping NoPlacement/NoPaletts entry: " + entry);
+            continue;
+        };
+        if (StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "FlagArray[Unselectable]", 1)) == 1) {
+            // dbg("skipping Unselectable entry: " + entry);
+            continue;
+        };
+        if (entry == "GhostNova"
+            || entry == "GhostAlternate" 
+            || entry == "MULE" // covered by scvs
+            || entry == "CommandCenterFlying" // only has land/load, covered elsewhere
+            || entry == "BarracksFlying" // only has land, covered elsewhere
+            || entry == "FactoryFlying" // only has land, covered elsewhere
+            || entry == "StarportFlying" // only has land, covered elsewhere
+            || entry == "PlanetaryFortress" // only has load/unload, covered by command center
+            || entry == "Marauder" // only has stim, covered by marine
+            || entry == "Banshee" // only has cloak, covered by ghost
+        ) {
+            // dbg("skipping specific units entry: " + entry);
+            continue;
+        };
+
+        cardLayoutsCount = CatalogFieldValueCount(c_gameCatalogUnit, entry, "CardLayouts", 1);
+        for(cardLayoutsIdx = 0; cardLayoutsIdx < cardLayoutsCount; cardLayoutsIdx += 1) {
+            fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons";
+            layoutButtonsCount = CatalogFieldValueCount(c_gameCatalogUnit, entry, fieldPath, 1);
+            for(layoutButtonsIdx = 0; layoutButtonsIdx < layoutButtonsCount; layoutButtonsIdx += 1) {
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "]";
+
+                // filter buttons (as hotkeys)
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].Face";
+                layoutButtonFace = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].Type";
+                layoutButtonType = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+
+                if (layoutButtonType == "Passive"
+                    || layoutButtonType == "SelectBuilder"
+                    || layoutButtonType == "Submenu"
+                    || layoutButtonType == "CancelSubmenu"
+                    || layoutButtonType == "Undefined"
+                ) {
+                    // dbg("skipping Passive/SelectBuilder/Submenu/CancelSubmenu button in entry: " + entry);
+                    continue;
+                };
+
+                if (layoutButtonType == "AbilCmd") {
+                    fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].AbilCmd";
+                    layoutButtonAbilCmdStr = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+                    layoutButtonAbilCmd = StringToAbilCmd(layoutButtonAbilCmdStr);
+                    layoutButtonAbil = AbilityCommandGetAbility(layoutButtonAbilCmd);
+                    layoutButtonCmd = AbilityCommandGetCommand(layoutButtonAbilCmd);
+                    layoutButtonCmdStr = StringSub(layoutButtonAbilCmdStr, StringFind(layoutButtonAbilCmdStr, ",", false) + 1, StringLength(layoutButtonAbilCmdStr));
+
+                    if (
+                        StringContains(layoutButtonAbilCmdStr, "burrow", c_stringAnywhere, false)
+                        || StringContains(layoutButtonFace, "burrow", c_stringAnywhere, false)
+
+                    ) {
+                        continue;
+                    }
+
+                    if (
+                        layoutButtonAbilCmdStr == "SalvageShared,Off"
+                        || layoutButtonAbilCmdStr == "BunkerTransport,Load"
+                        || layoutButtonAbilCmdStr == "MedivacTransport,Load"
+                    ) {
+                        // dbg("skipping specific abilcmd button in entry: " + entry);
+                        continue;
+                    }
+
+                    if (layoutButtonAbil == "SprayTerran"
+                        || layoutButtonAbil == "SprayZerg"
+                        || layoutButtonAbil == "SprayProtoss"
+                        || layoutButtonAbil == "MedivacHeal"
+                    ) {
+                        // dbg("skipping specific ability button in entry: " + entry);
+                        continue;
+                    }
+
+                    abilityEntryScope = CatalogEntryScope(c_gameCatalogAbil, layoutButtonAbil);
+
+                    // if (abilityEntryScope == "CAbilMorph" && layoutButtonCmdStr == "Cancel") {
+                    if (layoutButtonCmdStr == "Cancel"
+                        || layoutButtonCmdStr == "Halt"
+                        || layoutButtonAbil == "LockOnCancel") {
+                        // dbg("skipping Cancel button in entry: " + entry);
+                        continue;
+                    }
+
+                    if (entry == "SCV" && abilityEntryScope == "CAbilBuild") {
+                        continue;
+                    }
+
+                    if (abilityEntryScope == "CAbilQueue"
+                        || abilityEntryScope == "CAbilBuildable"
+                        || abilityEntryScope == "CAbilTrain"
+                        || abilityEntryScope == "CAbilRally"
+                        || abilityEntryScope == "CAbilMove"
+                        || abilityEntryScope == "CAbilStop"
+                        || abilityEntryScope == "CAbilAttack"
+                        || abilityEntryScope == "CAbilResearch" // upgrades will be this
+                        || abilityEntryScope == "CAbilRedirectInstant"
+                        || abilityEntryScope == "CAbilRedirectTarget"
+                    ) {
+                        // dbg("skipping CAbilQueue/CAbilBuildable/CAbilTrain/CAbilRally/... button " + layoutButtonFace + " in entry: " + entry);
+                        continue;
+                    }
+
+                }
+
+                dbg("                    (" + IntToString(validHkCount + 1) + ") " + layoutButtonFace + " <" + abilityEntryScope + "> " + layoutButtonAbilCmdStr);
+                validHkCount += 1;
+            }
+        }
+
+        if (validHkCount == 0) {
+            // dbg("skipping 0 valid abilities entry: " + entry);
+            continue;
+        };
+
+        entryScope = CatalogEntryScope(c_gameCatalogUnit, entry);
+
+        dbg("entry at index " + IntToString(entryIdx) + ": <" + entryScope + "> " + entry + "(" + IntToString(validHkCount) + ")");
+
+    }
+
+}
+
+void exploreProtoss() {
+    int entryIdx;
+
+    string entry;
+    string entryScope;
+
+    int cardLayoutsCount;
+    int cardLayoutsIdx;
+    int layoutButtonsCount;
+    int layoutButtonsIdx;
+
+    string layoutButtonFace;
+    string layoutButtonType;
+    string layoutButtonAbilCmdStr;
+    abilcmd layoutButtonAbilCmd;
+    string layoutButtonAbil;
+    int layoutButtonCmd;
+    string layoutButtonCmdStr;
+
+    string abilityEntryScope;
+
+    string fieldPath;
+
+    int validHkCount;
+
+    int unitEntryCount = CatalogEntryCount(c_gameCatalogUnit);
+    dbg("unitEntryCount: " + IntToString(unitEntryCount));
+
+    for(entryIdx = 1; entryIdx <= unitEntryCount; entryIdx += 1) {
+        validHkCount = 0;
+        entry = CatalogEntryGet(c_gameCatalogUnit, entryIdx);
+
+        // filter entries
+        if (!CatalogEntryIsValid(c_gameCatalogUnit, entry)) {
+            // dbg("skipping invalid entry at index " + IntToString(entryIdx));
+            continue;
+        };
+        if (CatalogFieldValueGet(c_gameCatalogUnit, entry, "Race", 1) != ct__raceId(PROTOSS)) {
+        // if (CatalogFieldValueGet(c_gameCatalogUnit, entry, "Race", 1) != ct__raceId(TERRAN)) {
+            // dbg("skipping non-protoss entry: " + entry);
+            continue;
+        };
+        if (!StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectFamily:Melee", c_stringAnywhere, false)) {
+            // dbg("skipping non-mele entry: " + entry);
+            continue;
+        };
+        if (!(
+            StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectType:Unit", c_stringAnywhere, false)
+            || StringContains(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorCategories", 1), "ObjectType:Structure", c_stringAnywhere, false)
+        )) {
+            // dbg("skipping non-unit/structure entry: " + entry);
+            continue;
+        };
+        if (
+            StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorFlags[NoPlacement]", 1)) == 1
+            || StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "EditorFlags[NoPalettes]", 1)) == 1
+        ) {
+            // dbg("skipping NoPlacement/NoPaletts entry: " + entry);
+            continue;
+        };
+        if (StringToInt(CatalogFieldValueGet(c_gameCatalogUnit, entry, "FlagArray[Unselectable]", 1)) == 1) {
+            // dbg("skipping Unselectable entry: " + entry);
+            continue;
+        };
+        if (entry == "GhostNova"
+            || entry == "GhostAlternate" 
+            || entry == "MULE" // covered by scvs
+            || entry == "CommandCenterFlying" // only has land/load, covered elsewhere
+            || entry == "BarracksFlying" // only has land, covered elsewhere
+            || entry == "FactoryFlying" // only has land, covered elsewhere
+            || entry == "StarportFlying" // only has land, covered elsewhere
+            || entry == "PlanetaryFortress" // only has load/unload, covered by command center
+            || entry == "Marauder" // only has stim, covered by marine
+            || entry == "Banshee" // only has cloak, covered by ghost
+        ) {
+            // dbg("skipping specific units entry: " + entry);
+            continue;
+        };
+
+        cardLayoutsCount = CatalogFieldValueCount(c_gameCatalogUnit, entry, "CardLayouts", 1);
+        for(cardLayoutsIdx = 0; cardLayoutsIdx < cardLayoutsCount; cardLayoutsIdx += 1) {
+            fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons";
+            layoutButtonsCount = CatalogFieldValueCount(c_gameCatalogUnit, entry, fieldPath, 1);
+            for(layoutButtonsIdx = 0; layoutButtonsIdx < layoutButtonsCount; layoutButtonsIdx += 1) {
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "]";
+
+                // filter buttons (as hotkeys)
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].Face";
+                layoutButtonFace = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+
+                fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].Type";
+                layoutButtonType = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+
+                if (layoutButtonType == "Passive"
+                    || layoutButtonType == "SelectBuilder"
+                    || layoutButtonType == "Submenu"
+                    || layoutButtonType == "CancelSubmenu"
+                    || layoutButtonType == "Undefined"
+                ) {
+                    // dbg("skipping Passive/SelectBuilder/Submenu/CancelSubmenu button in entry: " + entry);
+                    continue;
+                };
+
+                if (layoutButtonType == "AbilCmd") {
+                    fieldPath = "CardLayouts[" + IntToString(cardLayoutsIdx) + "].LayoutButtons[" + IntToString(layoutButtonsIdx) + "].AbilCmd";
+                    layoutButtonAbilCmdStr = CatalogFieldValueGet(c_gameCatalogUnit, entry, fieldPath, 1);
+                    layoutButtonAbilCmd = StringToAbilCmd(layoutButtonAbilCmdStr);
+                    layoutButtonAbil = AbilityCommandGetAbility(layoutButtonAbilCmd);
+                    layoutButtonCmd = AbilityCommandGetCommand(layoutButtonAbilCmd);
+                    layoutButtonCmdStr = StringSub(layoutButtonAbilCmdStr, StringFind(layoutButtonAbilCmdStr, ",", false) + 1, StringLength(layoutButtonAbilCmdStr));
+
+                    // if (
+                    //     StringContains(layoutButtonAbilCmdStr, "burrow", c_stringAnywhere, false)
+                    //     || StringContains(layoutButtonFace, "burrow", c_stringAnywhere, false)
+
+                    // ) {
+                    //     continue;
+                    // }
+
+                    if (
+                        layoutButtonAbilCmdStr == "SalvageShared,Off"
+                        || layoutButtonAbilCmdStr == "BunkerTransport,Load"
+                        || layoutButtonAbilCmdStr == "MedivacTransport,Load"
+                    ) {
+                        // dbg("skipping specific abilcmd button in entry: " + entry);
+                        continue;
+                    }
+
+                    if (layoutButtonAbil == "SprayTerran"
+                        || layoutButtonAbil == "SprayZerg"
+                        || layoutButtonAbil == "SprayProtoss"
+                        || layoutButtonAbil == "MedivacHeal"
+                    ) {
+                        // dbg("skipping specific ability button in entry: " + entry);
+                        continue;
+                    }
+
+                    abilityEntryScope = CatalogEntryScope(c_gameCatalogAbil, layoutButtonAbil);
+
+                    // if (abilityEntryScope == "CAbilMorph" && layoutButtonCmdStr == "Cancel") {
+                    if (layoutButtonCmdStr == "Cancel"
+                        || layoutButtonCmdStr == "Halt"
+                        || layoutButtonAbil == "LockOnCancel") {
+                        // dbg("skipping Cancel button in entry: " + entry);
+                        continue;
+                    }
+
+                    if (entry == "SCV" && abilityEntryScope == "CAbilBuild") {
+                        continue;
+                    }
+
+                    if (abilityEntryScope == "CAbilQueue"
+                        || abilityEntryScope == "CAbilBuildable"
+                        || abilityEntryScope == "CAbilTrain"
+                        || abilityEntryScope == "CAbilRally"
+                        || abilityEntryScope == "CAbilMove"
+                        || abilityEntryScope == "CAbilStop"
+                        || abilityEntryScope == "CAbilAttack"
+                        || abilityEntryScope == "CAbilResearch" // upgrades will be this
+                        || abilityEntryScope == "CAbilRedirectInstant"
+                        || abilityEntryScope == "CAbilRedirectTarget"
+                    ) {
+                        // dbg("skipping CAbilQueue/CAbilBuildable/CAbilTrain/CAbilRally/... button " + layoutButtonFace + " in entry: " + entry);
+                        continue;
+                    }
+
+                }
+
+                dbg("                    (" + IntToString(validHkCount + 1) + ") " + layoutButtonFace + " <" + abilityEntryScope + "> " + layoutButtonAbilCmdStr);
+                validHkCount += 1;
+            }
+        }
+
+        if (validHkCount == 0) {
+            // dbg("skipping 0 valid abilities entry: " + entry);
+            continue;
+        };
+
+        entryScope = CatalogEntryScope(c_gameCatalogUnit, entry);
+
+        dbg("entry at index " + IntToString(entryIdx) + ": <" + entryScope + "> " + entry + "(" + IntToString(validHkCount) + ")");
+
+    }
+
+}

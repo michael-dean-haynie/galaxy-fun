@@ -87,8 +87,8 @@ void dg_hk__createSelectTrainingModeDialog() {
 
     DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeStructures)));
     DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeProduction)));
-    // DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeAbilities)));
-    // DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeUpgrades)));
+    DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeAbilities)));
+    DialogControlAddItem(hotkeyModePulldown, PlayerGroupAll(), StringToText(hotkeyModeStr(dg_hk__hotkeyModeUpgrades)));
     dg__dialogControlSelectItem(hotkeyModePulldown, PlayerGroupAll(), dg_hk__hotkeyMode);
 
     runningOffsetY += pulldownHeight * 2;
@@ -167,7 +167,7 @@ int dg_hk__createStructuresScoresDialog(int race) {
     string structureIconSrc;
     string structureId;
 
-    int dialogWidth = 460;
+    int dialogWidth = 620;
     int dialogHeight = 875;
     int dialogBaseLeftPadding = 32;
     int dialogBaseTopPadding = 30;
@@ -425,7 +425,7 @@ int dg_hk__createProductionScoresDialog(int race) {
     text trainedUnitTxt;
     string trainedUnitId;
 
-    int dialogWidth = 460;
+    int dialogWidth = 620;
     int dialogHeight = 875;
     int dialogBaseLeftPadding = 32;
     int dialogBaseTopPadding = 30;
@@ -684,6 +684,278 @@ int dg_hk__createProductionScoresDialog(int race) {
     return DialogLastCreated();
 }
 
+int dg_hk__createUpgradesScoresDialog(int race) {
+    int dialog;
+    int casterIdx;
+    int cmdIdx;
+
+    string casterUnitIconSrc;
+    text casterUnitTxt;
+    string casterUnitId;
+
+    string abilityIconSrc;
+    text abilityNameTxt;
+    string abilityUpgradeId;
+
+    int dialogWidth = 620;
+    int dialogHeight = 875;
+    int dialogBaseLeftPadding = 32;
+    int dialogBaseTopPadding = 30;
+    int dialogBaseBottomPadding = 25;
+
+    int tableWidth = dialogWidth - (dialogBaseLeftPadding * 2);
+    int delayColumnWidth = FixedToInt(Round(tableWidth * 0.17));
+    int accuracyColumnWidth = FixedToInt(Round(tableWidth * 0.42));
+    int upgradeColumnWidth = tableWidth - delayColumnWidth - accuracyColumnWidth;
+    bool casterRowCreated;
+
+    int headerCellHeight = 16;
+    int rowCellHeight = 16;
+    int indentationWidth = rowCellHeight; // so it will be the same as the icon width;
+
+    int modeButtonWidth = FixedToInt(tableWidth * 0.33);
+    int modeButtonHeight = 50;
+
+    int runningOffsetX = dialogBaseLeftPadding;
+    int runningOffsetY = dialogBaseTopPadding;
+
+    string targetSession;
+
+    // single-session data variables
+    int attempts;
+    int failures;
+    int successes;
+    int accuracyScore;
+    fixed delay;
+
+    int totalAttempts;
+    int totalFailures;
+    int totalSuccesses;
+    int totalAccuracyScore;
+    fixed totalDelay;
+    int totalDelayDivisor;
+    fixed totalAvgDelay;
+
+    // comparative (progress) data variables
+    fixed accuracyProgress;
+    fixed delayProgress;
+
+    fixed totalAccuracyProgress;
+    int totalAccuracyProgressDivisor;
+    fixed totalDelayProgress;
+    int totalDelayProgressDivisor;
+
+    if (dg__scoresDialog != 0) {
+        DialogDestroy(dg__scoresDialog);
+    }
+    DialogCreate(dialogWidth, dialogHeight, c_anchorTopRight, 0, 0, true);
+    DialogSetVisible(DialogLastCreated(), PlayerGroupAll(), true);
+    dialog = DialogLastCreated();
+    dg__scoresDialog = dialog;
+
+    hk_ug__init(); // make sure constants have been initialized
+
+    // column headers
+    // column 1 header cell (Unit)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, upgradeColumnWidth, headerCellHeight, null, StringToText("Upgrade"));
+    runningOffsetX += upgradeColumnWidth;
+
+    // column 2 header cell (Accuracy)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, headerCellHeight, "Assets\\Textures\\btn-ability-terran-snipe-color.dds", StringToText("Accuracy"));
+    runningOffsetX += accuracyColumnWidth;
+
+    // column 3 header cell (Delay)
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, headerCellHeight, "Assets\\Textures\\icon-time-protoss.dds", StringToText("Delay"));
+    runningOffsetX += delayColumnWidth;
+
+    runningOffsetX = dialogBaseLeftPadding;
+    runningOffsetY += headerCellHeight;
+
+    // header line
+    createHorizontalRule(dialog, runningOffsetX, runningOffsetY, tableWidth, 6);
+    runningOffsetY += headerCellHeight;
+
+    // rows
+    for(casterIdx = 0; casterIdx < hk_ug__castersSize; casterIdx += 1) {
+        casterRowCreated = false;
+        if(hk_ug__castersElementHasValue(race, casterIdx)) {
+            for(cmdIdx = 0; cmdIdx < hk_ug__promptsSize; cmdIdx += 1) {
+                if (hk_ug__promptsElementHasValue(race, casterIdx, cmdIdx)) {
+                    casterUnitIconSrc = hk_ug__prompts[race][casterIdx][cmdIdx].casterUnitIconSrc;
+                    casterUnitTxt = hk_ug__prompts[race][casterIdx][cmdIdx].casterUnitTxt;
+                    casterUnitId = hk_ug__prompts[race][casterIdx][cmdIdx].casterUnitId;
+
+                    abilityIconSrc = hk_ug__prompts[race][casterIdx][cmdIdx].abilityIconSrc;
+                    abilityNameTxt = hk_ug__prompts[race][casterIdx][cmdIdx].promptTargetTxt;
+                    abilityUpgradeId = hk_ug__prompts[race][casterIdx][cmdIdx].abilityUpgradeId;
+
+                    // Caster Row
+                    if (!casterRowCreated){
+                        populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, upgradeColumnWidth, rowCellHeight, casterUnitIconSrc, casterUnitTxt);
+                        runningOffsetY += rowCellHeight;
+                        casterRowCreated = true;
+                    }
+                    ////////////////////////////////////////////////
+                    // Upgrade column (for any session target)
+                    ///////////////////////////////////////////////
+                    populateCellWithIconAndTextIndented(dialog, runningOffsetX, runningOffsetY, upgradeColumnWidth, rowCellHeight, abilityIconSrc, abilityNameTxt, indentationWidth);
+                    runningOffsetX += upgradeColumnWidth;
+
+                    // score is comparative between 2 sessions (progress)
+                    if (dg__scoreMode == dg__scoreModeProgress) {
+                        ////////////////////////////////////////
+                        // Accuracy Column (for progress)
+                        ////////////////////////////////////////
+
+                        accuracyProgress = getAccuracyProgress(bk__hotkeysUpgradesPrefix + abilityUpgradeId);
+                        totalAccuracyProgress += accuracyProgress;
+                        totalAccuracyProgressDivisor += 1;
+
+                        populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracyProgress(accuracyProgress));
+                        runningOffsetX += accuracyColumnWidth;
+
+                        ////////////////////////////////////////
+                        // Delay Column (for progress)
+                        ////////////////////////////////////////
+
+                        delayProgress = getDelayProgress(bk__hotkeysUpgradesPrefix + abilityUpgradeId);
+                        totalDelayProgress += delayProgress;
+                        totalDelayProgressDivisor += 1;
+
+                        populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelayProgress(delayProgress));
+                        runningOffsetX += delayColumnWidth;
+                    }
+
+                    // score is a for a particular session
+                    else {
+
+                        // figure out the latest session with attempts
+                        if (dg__scoreMode == dg__scoreModeLatest) {
+                            targetSession = bk__currentSession;
+                            attempts = bk__getValueAsInt(bk__hotkeysUpgradesPrefix + abilityUpgradeId, bk__currentSessionAttempts);
+                            if (attempts == 0 && dg__inSession == false) { // when not inSession, sub in data from the most recent session
+                                targetSession = bk__mostRecentSession;
+                                attempts = bk__getValueAsInt(bk__hotkeysUpgradesPrefix + abilityUpgradeId, bk__mostRecentSessionAttempts);
+                            }
+                        }
+
+                        // go straight to alltime data
+                        if (dg__scoreMode == dg__scoreModeAllTime) {
+                            targetSession = bk__allTime;
+                            attempts = bk__getValueAsInt(bk__hotkeysUpgradesPrefix + abilityUpgradeId, bk__allTimeAttempts);
+                        }
+
+                        totalAttempts += attempts;
+
+                        failures = bk__getValueAsInt(bk__hotkeysUpgradesPrefix + abilityUpgradeId, targetSession + bk__failures);
+                        totalFailures += failures;
+
+                        delay = bk__getValueAsFixed(bk__hotkeysUpgradesPrefix + abilityUpgradeId, targetSession + bk__delay);
+                        if (delay > 0) {
+                            totalDelay += delay;
+                            totalDelayDivisor += 1;
+                        }
+
+                        successes = attempts - failures;
+                        totalSuccesses += successes;
+
+                        ////////////////////////////////////////
+                        // Accuracy Column (for latest session)
+                        ////////////////////////////////////////
+                        accuracyScore = 100;
+                        if (attempts > 0) {
+                            accuracyScore = FixedToInt(Round((IntToFixed(successes) / IntToFixed(attempts)) * 100));
+                        }
+
+                        // full-width example: "100% (999999/999999)"
+                        populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(successes, attempts, accuracyScore));
+                        runningOffsetX += accuracyColumnWidth;
+
+                        ////////////////////////////////////////
+                        // Delay Column (for latest session)
+                        ////////////////////////////////////////
+
+                        // full-width example: "99.99s"
+                        populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(delay, successes));
+                        runningOffsetX += delayColumnWidth;
+                    }
+
+                    runningOffsetY += rowCellHeight;
+                    runningOffsetX = dialogBaseLeftPadding;
+                }
+            }
+        }
+    }
+
+    // bottom line
+    createHorizontalRule(dialog, runningOffsetX, runningOffsetY, tableWidth, 4);
+    runningOffsetY += headerCellHeight;
+
+    // upgrades column
+    populateCellWithIconAndText(dialog, runningOffsetX, runningOffsetY, upgradeColumnWidth, rowCellHeight, null, StringToText("Overall"));
+    runningOffsetX += upgradeColumnWidth;
+
+    // score is comparative between 2 sessions (progress)
+    if (dg__scoreMode == dg__scoreModeProgress) {
+        // Accuracy column
+        populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracyProgress(totalAccuracyProgress / totalAccuracyProgressDivisor));
+        runningOffsetX += accuracyColumnWidth;
+
+        // DelayColumn
+        // full-width example: "99.99s"
+        populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelayProgress(totalDelayProgress / totalDelayProgressDivisor));
+        runningOffsetX += delayColumnWidth;
+    }
+
+    // score is a for a particular session
+    else {
+        // Accuracy column
+        totalAccuracyScore = 100;
+        if (totalAttempts > 0) {
+            totalAccuracyScore = FixedToInt(Round((IntToFixed(totalSuccesses) / IntToFixed(totalAttempts)) * 100));
+        }
+
+        // full-width example: "100% (999999/999999)"
+        populateCellWithText(dialog, runningOffsetX, runningOffsetY, accuracyColumnWidth, rowCellHeight, formatAccuracy(totalSuccesses, totalAttempts, totalAccuracyScore));
+        runningOffsetX += accuracyColumnWidth;
+
+        // Delay column
+        if (totalSuccesses > 0) {
+            totalAvgDelay = totalDelay / totalDelayDivisor;
+        }
+
+        // full-width example: "99.99s"
+        populateCellWithText(dialog, runningOffsetX, runningOffsetY, delayColumnWidth, rowCellHeight, formatDelay(totalAvgDelay, totalSuccesses));
+        runningOffsetX += delayColumnWidth;
+    }
+
+
+    // bottom buttons
+    runningOffsetY = dialogBaseBottomPadding;
+    runningOffsetX = dialogBaseLeftPadding;
+
+    dg__scoreModeLatestBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Latest"), null);
+    if (dg__scoreMode == dg__scoreModeLatest) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
+    runningOffsetX += modeButtonWidth;
+
+    dg__scoreModeProgressBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("Progress"), null);
+    if (dg__scoreMode == dg__scoreModeProgress) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
+    runningOffsetX += modeButtonWidth;
+
+    dg__scoreModeAllTimeBtn = libNtve_gf_CreateDialogItemButton(dialog, modeButtonWidth, modeButtonHeight, c_anchorBottomLeft, runningOffsetX, runningOffsetY, StringToText(""), StringToText("All Time"), null);
+    if (dg__scoreMode == dg__scoreModeAllTime) {
+        libNtve_gf_SetDialogItemToggled(DialogControlLastCreated(), true, (PlayerGroupAll()));
+    }
+    runningOffsetX += modeButtonWidth;
+
+
+    return DialogLastCreated();
+}
+
 void dg_hk__onSelectionChangedHotkeyModePulldown(int dialogCtrlId) {
     int selectedIndex = DialogControlGetSelectedItem(dialogCtrlId, 1);
     dg_hk__hotkeyMode = selectedIndex - 1; // items are 1 indexed, races are 0 indexed
@@ -694,6 +966,9 @@ void dg_hk__onSelectionChangedHotkeyModePulldown(int dialogCtrlId) {
         }
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction) {
             dg_hk__createProductionScoresDialog(dg__raceSelection);
+        }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeUpgrades) {
+            dg_hk__createUpgradesScoresDialog(dg__raceSelection);
         }
     }
 }
@@ -706,6 +981,9 @@ void dg_hk__onClickBeginBtn() {
     }
     if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction){
         hk_pd__begin(dg__raceSelection);
+    }
+    if (dg_hk__hotkeyMode == dg_hk__hotkeyModeUpgrades){
+        hk_ug__begin(dg__raceSelection);
     }
 }
 
@@ -888,13 +1166,13 @@ static int hotkeyModeInt(string str) {
         return 0;
     }
     if (str == "Unit Production") {
-        return 0;
+        return 1;
     }
     if (str == "Abilities") {
-        return 0;
+        return 2;
     }
     if (str == "Upgrades/Research") {
-        return 0;
+        return 3;
     }
     return -1;
 }

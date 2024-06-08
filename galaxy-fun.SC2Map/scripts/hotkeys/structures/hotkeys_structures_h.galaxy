@@ -7,6 +7,7 @@ struct hk__prompt
     string promptInstruction; // "Build Structure"
     text promptTargetTxt; // "Factory"
     string abilityIconSrc; // "Assets\\Textures\\btn-building-terran-factory.dds"
+    string abilityUpgradeId;
     string producedUnitId;
     fixed producedUnitTime;
     string casterUnitId;

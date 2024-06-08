@@ -6,6 +6,7 @@ struct hk__caster
 {
     string unitId;
     string ability;
+    string addedOnToUnitId; // when the castor is an add on, this is the building it is added on to
 };
 
 //////////////////////////////////////////////////////////////////

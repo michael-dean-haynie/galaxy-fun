@@ -120,6 +120,9 @@ void dg__onClickScoreModeBtn(int control) {
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction) {
             dg_hk__createProductionScoresDialog(dg__raceSelection);
         }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeUpgrades) {
+            dg_hk__createUpgradesScoresDialog(dg__raceSelection);
+        }
     }
 }
 
@@ -136,6 +139,9 @@ void dg__onSelectionChangedRacePulldown(int control) {
         }
         if (dg_hk__hotkeyMode == dg_hk__hotkeyModeProduction) {
             dg_hk__createProductionScoresDialog(dg__raceSelection);
+        }
+        if (dg_hk__hotkeyMode == dg_hk__hotkeyModeUpgrades) {
+            dg_hk__createUpgradesScoresDialog(dg__raceSelection);
         }
     }
 }
@@ -171,5 +177,7 @@ void dg__test() {
 //////////////////////////////////////////////////////////////////
 
 void dg__init() {
+    dg__raceSelection = ct__raceInt(PlayerRace(1));
+
     dg_hk__init();
 }

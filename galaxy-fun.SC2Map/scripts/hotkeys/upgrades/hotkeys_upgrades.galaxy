@@ -1,0 +1,497 @@
+//////////////////////////////////////////////////////////////////
+// STRUCTS
+//////////////////////////////////////////////////////////////////
+
+struct hk_ug__randoPrompt
+{
+    int raceIdx;
+    int casterIdx;
+    int cmdIdx;
+    bool hasData;
+};
+
+//////////////////////////////////////////////////////////////////
+// CONSTANTS
+//////////////////////////////////////////////////////////////////
+
+static string pylonUnitId = "Pylon";
+
+static const int randoPromptsSize = 50;
+static hk_ug__randoPrompt[3][randoPromptsSize] randoPrompts; // prompt index info for randomization (by race)
+
+//////////////////////////////////////////////////////////////////
+// VARIABLES
+//////////////////////////////////////////////////////////////////
+
+static bool initialized = false;
+
+static int activeRace;
+static int activeCaster;
+static int activeCmd;
+static int activeHotkeyPromptDialog;
+static unit activeCasterUnit;
+static unit pylonPropUnit;
+static timer activeTimer;
+
+//////////////////////////////////////////////////////////////////
+// FUNCTIONS
+//////////////////////////////////////////////////////////////////
+
+
+// static function declarations
+static void initHotkeyPrompts ();
+static void promptUserForUpgradesHotkey(int race, bool doGetNewPrompt);
+static void activateRandomPrompt();
+
+void hk_ug__begin(int raceIdx) {
+    int casterIdx;
+    int cmdIdx;
+
+    string fieldPath;
+    string abilityId;
+
+    // start fresh with bank data
+    bk__startHotkeysUpgradesSession(raceIdx);
+
+    // Remove Techtree Requirements
+    TechTreeRequirementsEnable(1, false); // disabling requirements for upgrades
+    TechTreeRestrictionsEnable(2, true); // enabling restrictions
+    for(casterIdx = 0; casterIdx < hk_ug__castersSize; casterIdx += 1) {
+        if(hk_ug__castersElementHasValue(raceIdx, casterIdx)) {
+            for(cmdIdx = 0; cmdIdx < hk_ug__promptsSize; cmdIdx += 1) {
+                if (hk_ug__promptsElementHasValue(raceIdx, casterIdx, cmdIdx)) {
+                    dbg("allowing - " + abilityId + IntToString(cmdIdx));
+                    abilityId = hk_ug__casters[raceIdx][casterIdx].ability;
+                    TechTreeAbilityAllow(1, AbilityCommand(abilityId, cmdIdx), true); // explicitly allowing ability
+                }
+            }
+        }
+    }
+    
+    // resources / supply
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 999999);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 999999);
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 200.0);
+
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, false);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, false);
+
+    libNtve_gf_HideScreenButton(true, sb__stopBtn);
+
+    promptUserForUpgradesHotkey(raceIdx, true);
+
+    dg__inSession = true;
+    dg_hk__createUpgradesScoresDialog(raceIdx);
+
+}
+
+void hk_ug__stop() {
+    int raceIdx = activeRace;
+    int casterIdx;
+    int cmdIdx;
+
+    string fieldPath;
+    string abilityId;
+    fixed originalTime;
+
+    unitgroup ug;
+    int ugCount;
+    unit ugUnit;
+
+    DialogDestroy(activeHotkeyPromptDialog);
+
+    for(casterIdx = 0; casterIdx < hk_ug__castersSize; casterIdx += 1) {
+        if(hk_ug__castersElementHasValue(raceIdx, casterIdx)) {
+            for(cmdIdx = 0; cmdIdx < hk_ug__promptsSize; cmdIdx += 1) {
+                if (hk_ug__promptsElementHasValue(raceIdx, casterIdx, cmdIdx)) {
+                    abilityId = hk_ug__casters[raceIdx][casterIdx].ability;
+                    TechTreeAbilityAllow(1, AbilityCommand(abilityId, cmdIdx), false); // explicitly disallowing ability
+                }
+            }
+        }
+    }
+    TechTreeRestrictionsEnable(1, false); // enabling restrictions
+    TechTreeRequirementsEnable(1, true); // disabling requirements for upgrades
+
+    // resources / supply
+    PlayerModifyPropertyInt(1, c_playerPropMinerals, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyInt(1, c_playerPropVespene, c_playerPropOperSetTo, 0);
+    PlayerModifyPropertyFixed(1, c_playerPropSuppliesMade, c_playerPropOperSetTo, 0.0);
+
+    // show resources again
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeResourcePanel, true);
+    UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, true);
+
+    // just kill everything in that general area (blame zerg weird morphing unit complexity)
+    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    ugCount = UnitGroupCount(ug, c_unitCountAll);
+    for (;; ugCount -= 1) {
+        ugUnit = UnitGroupUnitFromEnd(ug, ugCount);
+        if (ugUnit == null) { break; }
+        // don't include pylon
+        if (UnitGetType(ugUnit) == pylonUnitId) {
+            continue;
+        }
+        UnitKill(ugUnit);
+    }
+    activeCasterUnit = null;
+
+    // remove pylon (if needed)
+    if (pylonPropUnit != null) {
+        UnitRemove(pylonPropUnit);
+        pylonPropUnit = null;
+    }
+
+    // remove creep
+    CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
+
+    dg_hk__createSelectTrainingModeDialog();
+
+    dg__inSession = false;
+    dg_hk__createUpgradesScoresDialog(raceIdx);
+}
+
+static void promptUserForUpgradesHotkey(int race, bool doGetNewPrompt) {
+    string casterUnitId;
+    string abilityId;
+
+    activeRace = race;
+    if (doGetNewPrompt) {
+        activateRandomPrompt();
+    }
+
+    // prompt dialog
+    if (activeHotkeyPromptDialog != 0) {
+        DialogDestroy(activeHotkeyPromptDialog);
+    }
+    activeHotkeyPromptDialog = dg_hk__createHotkeyPromptDialog(
+        hk_ug__prompts[activeRace][activeCaster][activeCmd].promptInstruction,
+        hk_ug__prompts[activeRace][activeCaster][activeCmd].promptTargetTxt,
+        hk_ug__prompts[activeRace][activeCaster][activeCmd].abilityIconSrc
+    );
+
+    // track response time
+    if (activeTimer == null) {
+        activeTimer = TimerCreate();
+        TimerStart(activeTimer, 9999.0, false, 1);
+    }
+    TimerRestart(activeTimer);
+
+    // caster
+    if (activeCasterUnit != null && UnitGetType(activeCasterUnit) != hk_ug__casters[activeRace][activeCaster].unitId) {
+        UnitRemove(activeCasterUnit);
+        activeCasterUnit = null;
+    }
+    if (activeCasterUnit == null) {
+        libNtve_gf_CreateUnitsAtPoint2(1, hk_ug__casters[activeRace][activeCaster].unitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_structure_location"));
+        activeCasterUnit = UnitLastCreated();
+    }
+    UnitSelect(activeCasterUnit, 1, true);
+
+    // addon target (if needed)
+    if (hk_ug__casters[activeRace][activeCaster].addedOnToUnitId != null) {
+        libNtve_gf_CreateUnitsAtPoint2(1, hk_ug__casters[activeRace][activeCaster].addedOnToUnitId, c_unitCreateIgnoreBirth, 1, PointWithOffset(PointFromName("hotkeytraining_structure_location"), -3.0, 0.0));
+    }
+
+    // pylon (if needed)
+    if (pylonPropUnit != null && activeRace != PROTOSS) {
+        UnitRemove(pylonPropUnit);
+        pylonPropUnit = null;
+    }
+    if (pylonPropUnit == null && activeRace == PROTOSS) {
+        libNtve_gf_CreateUnitsAtPoint2(1, pylonUnitId, c_unitCreateIgnorePlacement, 1, PointFromName("hotkeytraining_pylon_location"));
+        pylonPropUnit = UnitLastCreated();
+    }
+
+    // creep (if needed)
+    if (activeRace == ZERG) {
+        CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, true, true);
+    }
+    if (activeRace != ZERG) {
+        CreepModify(PointFromName("hotkeytraining_structure_location"), 4.0, false, true);
+    }
+}
+
+// sets active indecies for a random prompt from a flat list
+static void activateRandomPrompt() {
+    int randomIndex = RandomInt(0, randoPromptsSize - 1);
+
+    while(randoPrompts[activeRace][randomIndex].hasData == false) {
+        randomIndex = RandomInt(0, randoPromptsSize - 1);
+    }
+
+    activeCaster = randoPrompts[activeRace][randomIndex].casterIdx;
+    activeCmd = randoPrompts[activeRace][randomIndex].cmdIdx;
+}
+
+void hk_ug__onAbilityIsUsed(abilcmd triggeringAbilCmd, int triggeringAbilCmdStage, unit triggeringUnit) {
+    string targetUpgradeId = hk_ug__prompts[activeRace][activeCaster][activeCmd].abilityUpgradeId;
+    string targetAbility = hk_ug__casters[activeRace][activeCaster].ability;
+    int targetCommand = activeCmd;
+
+
+    string ability = AbilityCommandGetAbility(triggeringAbilCmd);
+    int command = AbilityCommandGetCommand(triggeringAbilCmd);
+
+    unitgroup ug;
+    int ugCount;
+    unit ugUnit;
+
+    bool success;
+
+    if (triggeringUnit != activeCasterUnit || triggeringAbilCmdStage != c_unitAbilStageExecute || ability != targetAbility) {
+        return; // unit was probably created by trigger or some other way (like canceled when destroying building)
+    }
+
+    success = ability == hk_ug__casters[activeRace][activeCaster].ability && command == targetCommand;
+
+    // success
+    if (success) {
+        bk__saveHotkeysUpgradesAttempt(activeRace, targetUpgradeId, true, TimerGetElapsed(activeTimer));
+    }
+    // failure
+    else {
+        bk__saveHotkeysUpgradesAttempt(activeRace, targetUpgradeId, false, 0.0);
+    }
+
+    // just kill everything in that general area (blame zerg weird morphing unit complexity)
+    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    ugCount = UnitGroupCount(ug, c_unitCountAll);
+    for (;; ugCount -= 1) {
+        ugUnit = UnitGroupUnitFromEnd(ug, ugCount);
+        if (ugUnit == null) { break; }
+        if (UnitGetType(ugUnit) == pylonUnitId) {
+            continue;
+        }
+        UnitKill(ugUnit);
+    }
+    activeCasterUnit = null;
+
+    // scores dialog
+    dg_hk__createUpgradesScoresDialog(activeRace);
+
+    promptUserForUpgradesHotkey(activeRace, success);
+
+}
+
+bool hk_ug__castersElementHasValue(int race, int caster) {
+    if (hk_ug__casters[race][caster].unitId != null) {
+        return true;
+    }
+    return false;
+}
+
+bool hk_ug__promptsElementHasValue(int race, int caster, int command) {
+    if (hk_ug__prompts[race][caster][command].promptInstruction != null) {
+        return true;
+    }
+    return false;
+}
+
+//////////////////////////////////////////////////////////////////
+// Initialization
+//////////////////////////////////////////////////////////////////
+
+void hk_ug__init() {
+    if (initialized) {
+        return;
+    }
+
+    hk_ug__casters[TERRAN][0].unitId = "EngineeringBay";
+    hk_ug__casters[TERRAN][0].ability = "EngineeringBayResearch";
+    hk_ug__casters[TERRAN][1].unitId = "Armory";
+    hk_ug__casters[TERRAN][1].ability = "ArmoryResearch";
+    hk_ug__casters[TERRAN][2].unitId = "BarracksTechLab";
+    hk_ug__casters[TERRAN][2].ability = "BarracksTechLabResearch";
+    hk_ug__casters[TERRAN][2].addedOnToUnitId = "Barracks";
+    hk_ug__casters[TERRAN][3].unitId = "FactoryTechLab";
+    hk_ug__casters[TERRAN][3].ability = "FactoryTechLabResearch";
+    hk_ug__casters[TERRAN][3].addedOnToUnitId = "Factory";
+    hk_ug__casters[TERRAN][4].unitId = "StarportTechLab";
+    hk_ug__casters[TERRAN][4].ability = "StarportTechLabResearch";
+    hk_ug__casters[TERRAN][4].addedOnToUnitId = "Starport";
+    hk_ug__casters[TERRAN][5].unitId = "FusionCore";
+    hk_ug__casters[TERRAN][5].ability = "FusionCoreResearch";
+    hk_ug__casters[TERRAN][6].unitId = "GhostAcademy";
+    hk_ug__casters[TERRAN][6].ability = "GhostAcademyResearchResearch";
+
+    hk_ug__casters[ZERG][0].unitId = "Hatchery";
+    hk_ug__casters[ZERG][0].ability = "LairResearch";
+    // hk_ug__casters[ZERG][0].unitId = "Lair";
+    // hk_ug__casters[ZERG][0].ability = "LairResearch";
+    // hk_ug__casters[ZERG][0].unitId = "Hive";
+    // hk_ug__casters[ZERG][0].ability = "LairResearch";
+    hk_ug__casters[ZERG][1].unitId = "EvolutionChamber";
+    hk_ug__casters[ZERG][1].ability = "evolutionchamberresearch";
+    hk_ug__casters[ZERG][2].unitId = "SpawningPool";
+    hk_ug__casters[ZERG][2].ability = "SpawningPoolResearch";
+    hk_ug__casters[ZERG][3].unitId = "BanelingNest";
+    hk_ug__casters[ZERG][3].ability = "BanelingNestResearch";
+    hk_ug__casters[ZERG][4].unitId = "RoachWarren";
+    hk_ug__casters[ZERG][4].ability = "RoachWarrenResearch";
+    hk_ug__casters[ZERG][5].unitId = "HydraliskDen";
+    hk_ug__casters[ZERG][5].ability = "HydraliskDenResearch";
+    hk_ug__casters[ZERG][6].unitId = "Spire";
+    hk_ug__casters[ZERG][6].ability = "SpireResearch";
+    // hk_ug__casters[ZERG][7].unitId = "GreaterSpire";
+    // hk_ug__casters[ZERG][7].ability = "SpireResearch";
+    hk_ug__casters[ZERG][8].unitId = "InfestationPit";
+    hk_ug__casters[ZERG][8].ability = "InfestationPitResearch";
+    hk_ug__casters[ZERG][9].unitId = "LurkerDenMP";
+    hk_ug__casters[ZERG][9].ability = "LurkerDenResearch";
+    hk_ug__casters[ZERG][10].unitId = "UltraliskCavern";
+    hk_ug__casters[ZERG][10].ability = "UltraliskCavernResearch";
+
+    hk_ug__casters[PROTOSS][0].unitId = "Forge";
+    hk_ug__casters[PROTOSS][0].ability = "ForgeResearch";
+    hk_ug__casters[PROTOSS][1].unitId = "CyberneticsCore";
+    hk_ug__casters[PROTOSS][1].ability = "CyberneticsCoreResearch";
+    hk_ug__casters[PROTOSS][2].unitId = "TwilightCouncil";
+    hk_ug__casters[PROTOSS][2].ability = "TwilightCouncilResearch";
+    hk_ug__casters[PROTOSS][3].unitId = "RoboticsBay";
+    hk_ug__casters[PROTOSS][3].ability = "RoboticsBayResearch";
+    hk_ug__casters[PROTOSS][4].unitId = "TemplarArchive";
+    hk_ug__casters[PROTOSS][4].ability = "TemplarArchivesResearch";
+    hk_ug__casters[PROTOSS][5].unitId = "DarkShrine";
+    hk_ug__casters[PROTOSS][5].ability = "DarkShrineResearch";
+    hk_ug__casters[PROTOSS][6].unitId = "FleetBeacon";
+    hk_ug__casters[PROTOSS][6].ability = "FleetBeaconResearch";
+
+    initHotkeyPrompts();
+
+    initialized = true;
+}
+
+static void initHotkeyPrompts () {
+    int race;
+    int caster;
+
+    string casterUnitIconSrc;
+    string casterUnitNameStr;
+    text casterUnitNameTxt;
+
+    int cardLayoutCount;
+    int cardLayout;
+
+    int layoutButtonCount;
+    int layoutButton;
+    string layoutButtonType;
+
+    string upgradeId;
+    string upgradeNameStr;
+    text upgradeNameTxt;
+    string upgradeParentId;
+
+    string abilCmdStr;
+    abilcmd abilCmd;
+    string ability;
+    int command;
+    string abilityScope;
+
+    // string producedUnitId;
+    // string producedUnitNameStr;
+    // text producedUnitNameTxt;
+    // fixed producedUnitTime;
+
+    string abilityButtonId;
+    string abilityIconSrc;
+
+    string fieldPath;
+
+    int promptsCountForRace;
+
+    for (race = 0; race < RACE_COUNT; race += 1) {
+        promptsCountForRace = 0;
+        for (caster = 0; caster < hk_ug__castersSize; caster += 1) {
+            if (hk_ug__castersElementHasValue(race, caster)) {
+                // hopefully this always works?
+                if (hk_ug__casters[race][caster].addedOnToUnitId != null) {
+                    casterUnitIconSrc = CatalogFieldValueGet(c_gameCatalogButton, hk_ug__casters[race][caster].addedOnToUnitId, "Icon", 1);
+                }
+                else {
+                    casterUnitIconSrc = CatalogFieldValueGet(c_gameCatalogButton, hk_ug__casters[race][caster].unitId, "Icon", 1);
+                }
+                casterUnitNameStr = CatalogFieldValueGet(c_gameCatalogUnit, hk_ug__casters[race][caster].unitId, "Name", 1);
+                casterUnitNameTxt = StringExternal(casterUnitNameStr);
+
+                cardLayoutCount = CatalogFieldValueCount(c_gameCatalogUnit, hk_ug__casters[race][caster].unitId, "CardLayouts", 1);
+                for (cardLayout = 0; cardLayout < cardLayoutCount; cardLayout += 1) {
+                    fieldPath = "CardLayouts[" + IntToString(cardLayout) + "].LayoutButtons";
+                    layoutButtonCount = CatalogFieldValueCount(c_gameCatalogUnit, hk_ug__casters[race][caster].unitId, fieldPath, 1);
+                    for (layoutButton = 0; layoutButton < layoutButtonCount; layoutButton += 1) {
+                        fieldPath = "CardLayouts[" + IntToString(cardLayout) + "].LayoutButtons[" + IntToString(layoutButton) + "].Type";
+                        layoutButtonType = CatalogFieldValueGet(c_gameCatalogUnit, hk_ug__casters[race][caster].unitId, fieldPath, 1);
+
+                        fieldPath = "CardLayouts[" + IntToString(cardLayout) + "].LayoutButtons[" + IntToString(layoutButton) + "].AbilCmd";
+                        abilCmdStr = CatalogFieldValueGet(c_gameCatalogUnit, hk_ug__casters[race][caster].unitId, fieldPath, 1);
+                        abilCmd = StringToAbilCmd(abilCmdStr);
+                        ability = AbilityCommandGetAbility(abilCmd);
+                        command = AbilityCommandGetCommand(abilCmd);
+                        // abilityScope = CatalogEntryScope(c_gameCatalogAbil, ability);
+
+                        if (layoutButtonType == "AbilCmd" && ability == hk_ug__casters[race][caster].ability) { 
+                            fieldPath = "InfoArray[" + IntToString(command) + "].Button.DefaultButtonFace";
+                            abilityButtonId = CatalogFieldValueGet(c_gameCatalogAbil, AbilityCommandGetAbility(abilCmd), fieldPath, 1);
+                            abilityIconSrc = CatalogFieldValueGet(c_gameCatalogButton, abilityButtonId, "Icon", 1);
+
+                            fieldPath = "InfoArray[" + IntToString(command) + "].Upgrade";
+                            upgradeId = CatalogFieldValueGet(c_gameCatalogAbil, ability, fieldPath, 1);
+
+                            // skip 2nd and 3rd level (i.e. terran infantry weapons) should have same hotkeys and taking too much room
+                            if (
+                                StringContains(upgradeId, "Level2", c_stringEnd, false)
+                                || StringContains(upgradeId, "Level3", c_stringEnd, false)
+                            ) {
+                                continue;
+                            }
+
+                            upgradeNameStr = "Upgrade/Name/" + upgradeId;
+                            upgradeNameTxt = StringExternal(upgradeNameStr);
+                            upgradeNameTxt = TextReplaceWord(upgradeNameTxt, StringToText(" Level 1"), StringToText(""), 1, false);
+                            upgradeNameTxt = TextReplaceWord(upgradeNameTxt, StringToText("Terran "), StringToText(""), 1, false);
+                            upgradeNameTxt = TextReplaceWord(upgradeNameTxt, StringToText("Zerg "), StringToText(""), 1, false);
+                            upgradeNameTxt = TextReplaceWord(upgradeNameTxt, StringToText("Protoss "), StringToText(""), 1, false);
+
+
+                            // // use shorter names from parent if applicable (sans "Level 1")
+                            // if (StringContains(upgradeId, "Level1", c_stringEnd, false)) {
+                            //     // try to find via api
+                            //     upgradeParentId = CatalogEntryParent(c_gameCatalogUpgrade, upgradeId);
+                            //     if (upgradeParentId != null && StringLength(upgradeParentId) > 0 && upgradeParentId != upgradeId) {
+                            //         upgradeNameStr = "Upgrade/Name/" + upgradeParentId;
+                            //     }
+
+                            //     // try to fake via string manipulation according to convention
+                            //     upgradeParentId = StringReplace(upgradeId, "", StringFind(upgradeId, "Level1", false), StringLength(upgradeId));
+                            //     if (upgradeParentId != null && StringLength(upgradeParentId) > 0 && upgradeParentId != upgradeId) {
+                            //         upgradeNameStr = "Upgrade/Name/" + upgradeParentId;
+                            //     }
+
+                            //     if (upgradeParentId != null && StringLength(upgradeParentId) > 0 && upgradeParentId != upgradeId) {
+                            //         dbg(upgradeId + " has string manip parent " + upgradeParentId);
+                            //         upgradeNameStr = "Upgrade/Name/" + upgradeParentId;
+                            //     }
+                            // }
+                            // upgradeNameTxt = StringExternal(upgradeNameStr);
+
+                            hk_ug__prompts[race][caster][command].promptInstruction = "Research Upgrade";
+                            hk_ug__prompts[race][caster][command].casterUnitId = hk_ug__casters[race][caster].unitId;
+                            hk_ug__prompts[race][caster][command].casterUnitIconSrc = casterUnitIconSrc;
+                            hk_ug__prompts[race][caster][command].casterUnitTxt = casterUnitNameTxt;
+                            hk_ug__prompts[race][caster][command].abilityIconSrc = abilityIconSrc;
+                            hk_ug__prompts[race][caster][command].abilityUpgradeId = upgradeId;
+                            hk_ug__prompts[race][caster][command].promptTargetTxt = upgradeNameTxt;
+
+                            randoPrompts[race][promptsCountForRace].raceIdx = race;
+                            randoPrompts[race][promptsCountForRace].casterIdx = caster;
+                            randoPrompts[race][promptsCountForRace].cmdIdx = command;
+                            randoPrompts[race][promptsCountForRace].hasData = true;
+                            promptsCountForRace += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}

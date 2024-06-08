@@ -33,6 +33,7 @@ int dg_hk__createHotkeyPromptDialog(string headingStr, text structureTxt, string
 
 int dg_hk__createStructuresScoresDialog(int race);
 int dg_hk__createProductionScoresDialog(int race);
+int dg_hk__createUpgradesScoresDialog(int race);
 
 void dg_hk__onSelectionChangedHotkeyModePulldown(int dialogCtrlId);
 void dg_hk__onClickBeginBtn();
