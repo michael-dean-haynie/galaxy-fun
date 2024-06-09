@@ -14,9 +14,11 @@ struct hk__ability
     string inTransportUnitId; // e.g. unload marine from bunker
     string damagedStructureUnitId; // e.g. repair bunker
     string abilityTargetUnitId; // e.g. snipe infestor
+    string abilityFriendlyTargetUnitId; // e.g. snipe infestor
     abilcmd casterSetupAbilCmd; // e.g. cloack before decloak
     bool needsNuke; // e.g. ghost launching nuke
     bool needsBase;
+    int casterCount;
     bool hasData;
 
 };

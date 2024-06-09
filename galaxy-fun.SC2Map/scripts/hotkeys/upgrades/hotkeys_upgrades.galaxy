@@ -123,7 +123,7 @@ void hk_ug__stop() {
     UISetFrameVisible(PlayerGroupAll(), c_syncFrameTypeSupply, true);
 
     // just kill everything in that general area (blame zerg weird morphing unit complexity)
-    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 8.0, UnitFilter(0, 0, 0, 0), 0);
     ugCount = UnitGroupCount(ug, c_unitCountAll);
     for (;; ugCount -= 1) {
         ugUnit = UnitGroupUnitFromEnd(ug, ugCount);
@@ -255,7 +255,7 @@ void hk_ug__onAbilityIsUsed(abilcmd triggeringAbilCmd, int triggeringAbilCmdStag
     }
 
     // just kill everything in that general area (blame zerg weird morphing unit complexity)
-    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 4.0, UnitFilter(0, 0, 0, 0), 0);
+    ug = UnitGroupSearch(null, c_playerAny, PointFromName("hotkeytraining_structure_location"), 8.0, UnitFilter(0, 0, 0, 0), 0);
     ugCount = UnitGroupCount(ug, c_unitCountAll);
     for (;; ugCount -= 1) {
         ugUnit = UnitGroupUnitFromEnd(ug, ugCount);

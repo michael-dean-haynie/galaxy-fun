@@ -281,6 +281,7 @@
         <Identifier>abilitytrigger</Identifier>
         <InitOff/>
         <Event Type="FunctionCall" Id="133F553A"/>
+        <Action Type="FunctionCall" Id="6AE97CE6"/>
         <Action Type="FunctionCall" Id="09E5A890"/>
     </Element>
     <Element Type="FunctionCall" Id="133F553A">
@@ -305,6 +306,20 @@
     <Element Type="Param" Id="B2BF1137">
         <ParameterDef Type="ParamDef" Library="Ntve" Id="3F2584C8"/>
         <Preset Type="PresetValue" Library="Ntve" Id="70496E3A"/>
+    </Element>
+    <Element Type="FunctionCall" Id="6AE97CE6">
+        <FunctionDef Type="FunctionDef" Library="Ntve" Id="E3741424"/>
+        <Parameter Type="Param" Id="6D4EA6E3"/>
+        <Parameter Type="Param" Id="ACDCBC48"/>
+    </Element>
+    <Element Type="Param" Id="6D4EA6E3">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="32A379D7"/>
+        <Value>1</Value>
+        <ValueType Type="int"/>
+    </Element>
+    <Element Type="Param" Id="ACDCBC48">
+        <ParameterDef Type="ParamDef" Library="Ntve" Id="A4A109ED"/>
+        <ValueType Type="string"/>
     </Element>
     <Element Type="FunctionCall" Id="09E5A890">
         <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000118"/>

@@ -90,6 +90,7 @@ bool gt_abilitytrigger_Func (bool testConds, bool runActions) {
         return true;
     }
 
+    libNtve_gf_PlayerRemoveCooldown(1, "");
     TriggerDebugOutput(1, StringToText("happened"), true);
     return true;
 }
